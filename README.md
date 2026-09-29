@@ -44,6 +44,37 @@ release line with the corresponding LuCI package manager.
   inserting the `--` option delimiter.
 - Does not allow the frontend to supply arbitrary trust flags.
 
+## Screenshots
+
+### Blocked by default
+
+The Software page shows that untrusted local APK installation is blocked.
+
+![Blocked untrusted local APK state on the LuCI Software page](docs/screenshots/luci-software-untrusted-blocked.png)
+
+With the setting blocked, the upload confirmation explains that unsigned or
+otherwise untrusted APKs require explicit opt-in.
+
+![Upload warning while untrusted local APK installation is blocked](docs/screenshots/luci-untrusted-upload-blocked.png)
+
+### Explicit opt-in
+
+The setting is available under **System → Software → Configure APK** and remains
+disabled by default.
+
+![Configure APK dialog with the Allow untrusted local packages option](docs/screenshots/luci-configure-untrusted-apk.png)
+
+### Allowed after opt-in
+
+After the setting is saved, the Software page shows the enabled state with a
+yellow warning badge.
+
+![Allowed untrusted local APK state on the LuCI Software page](docs/screenshots/luci-software-untrusted-allowed.png)
+
+Each uploaded APK still requires a separate confirmation.
+
+![Per-upload confirmation while untrusted local APK installation is allowed](docs/screenshots/luci-untrusted-upload-allowed.png)
+
 ## Security model
 
 Enabling this option bypasses APK signature trust for the uploaded local file.
