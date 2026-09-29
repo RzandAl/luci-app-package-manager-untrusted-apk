@@ -1,0 +1,276 @@
+From 4836c113cdbd8c01b4586970d9471541084aaaec Mon Sep 17 00:00:00 2001
+From: RazisID12 <182811733+RazisID12@users.noreply.github.com>
+Date: Mon, 28 Sep 2026 20:18:33 +0100
+Subject: [PATCH] luci-app-package-manager: allow untrusted local APK uploads
+
+Add an opt-in UCI setting for untrusted local APK uploads. Keep it
+disabled by default.
+
+When enabled, add --allow-untrusted and --force-non-repository only
+for an install request targeting exactly /tmp/upload.apk. The existing
+per-package confirmation remains in place, and the frontend cannot
+supply these flags.
+
+Ref: https://github.com/openwrt/luci/issues/8482
+Co-authored-by: AmleyID <324701712+AmleyID@users.noreply.github.com>
+---
+ .../resources/view/package-manager.js         | 119 +++++++++++++++++-
+ .../root/usr/libexec/package-manager-call     |  14 +++
+ .../rpcd/acl.d/luci-app-package-manager.json  |   6 +-
+ 3 files changed, 131 insertions(+), 8 deletions(-)
+
+diff --git a/applications/luci-app-package-manager/htdocs/luci-static/resources/view/package-manager.js b/applications/luci-app-package-manager/htdocs/luci-static/resources/view/package-manager.js
+index 48476dbe167f8ce4bc8a552728f132810ae7084c..9b3cf966a1f11b91fdf856f6e24e92b50306e9f7 100644
+--- a/applications/luci-app-package-manager/htdocs/luci-static/resources/view/package-manager.js
++++ b/applications/luci-app-package-manager/htdocs/luci-static/resources/view/package-manager.js
+@@ -3,6 +3,7 @@
+ 'require fs';
+ 'require ui';
+ 'require rpc';
++'require uci';
+ 
+ const css = '								\
+ 	.controls {							\
+@@ -42,6 +43,22 @@ const css = '								\
+ 		align-self: center;				\
+ 	}									\
+ 										\
++	.untrusted-upload-status {			\
++		margin-left: .75em;			\
++	}									\
++										\
++	.untrusted-upload-status > .label {	\
++		display: inline-block;			\
++		padding-top: .2em;				\
++		padding-bottom: .2em;			\
++		transform: scale(.9);			\
++		transform-origin: left center;	\
++	}									\
++										\
++	.untrusted-upload-description {		\
++		padding-bottom: .5em;			\
++	}									\
++										\
+ 	.controls > div > input {			\
+ 		width: auto;					\
+ 	}									\
+@@ -93,6 +110,13 @@ const callMountPoints = rpc.declare({
+ 	expect: { result: [] }
+ });
+ 
++const callUciCommit = rpc.declare({
++	object: 'uci',
++	method: 'commit',
++	params: [ 'config' ],
++	reject: true
++});
++
+ const packages = {
+ 	available: { providers: {}, pkgs: {} },
+ 	installed: { providers: {}, pkgs: {} }
+@@ -855,6 +879,33 @@ function handleManualInstall(ev)
+ 	]);
+ }
+ 
++function untrustedUploadsEnabled()
++{
++	return uci.get('luci', 'package_manager', 'allow_untrusted_uploads') === '1';
++}
++
++function renderUntrustedUploadStatus()
++{
++	const enabled = untrustedUploadsEnabled();
++
++	return E('span', {
++		'id': 'untrusted-upload-status',
++		'class': 'label ' + (enabled ? 'warning' : 'success')
++	}, enabled ? _('Allowed') : _('Blocked'));
++}
++
++function updateUntrustedUploadStatus()
++{
++	const status = document.getElementById('untrusted-upload-status');
++	const enabled = untrustedUploadsEnabled();
++
++	if (!status)
++		return;
++
++	status.className = 'label ' + (enabled ? 'warning' : 'success');
++	status.textContent = enabled ? _('Allowed') : _('Blocked');
++}
++
+ function handleConfig(ev)
+ {
+ 	const conf = {};
+@@ -910,6 +961,25 @@ function handleConfig(ev)
+ 			}, '%h'.format(conf[file])));
+ 		});
+ 
++		if (L.hasSystemFeature('apk')) {
++			body.push(E('h5', {}, _('Local package installation')));
++			body.push(E('p', {}, [
++				E('label', { 'class': 'cbi-checkbox' }, [
++					E('input', {
++						'id': 'allow-untrusted-uploads-cb',
++						'type': 'checkbox',
++						'name': 'allow_untrusted_uploads',
++						'checked': untrustedUploadsEnabled() || null,
++						'disabled': isReadonlyView
++					}), ' ',
++					E('label', { 'for': 'allow-untrusted-uploads-cb' }), ' ',
++					_('Allow untrusted local packages')
++				])
++			]));
++			body.push(E('p', { 'class': 'cbi-value-description untrusted-upload-description' },
++				_('Permit installation of uploaded local APK files without a trusted signature. Each installation still requires confirmation.')));
++		}
++
+ 		body.push(E('div', { 'class': 'button-row' }, [
+ 			E('div', {
+ 				'class': 'btn cbi-button-neutral',
+@@ -920,7 +990,10 @@ function handleConfig(ev)
+ 				'class': 'btn cbi-button-positive',
+ 				'click': function(ev) {
+ 					const data = {};
+-					findParent(ev.target, '.modal').querySelectorAll('textarea[name]')
++					const modal = findParent(ev.target, '.modal');
++					const allowUntrustedUploads = modal.querySelector('input[name="allow_untrusted_uploads"]');
++
++					modal.querySelectorAll('textarea[name]')
+ 						.forEach(function(textarea) {
+ 							data[textarea.getAttribute('name')] = textarea.value
+ 						});
+@@ -929,11 +1002,27 @@ function handleConfig(ev)
+ 						E('p', { 'class': 'spinning' }, _('Saving configuration data…'))
+ 					]);
+ 
+-					Promise.all(Object.keys(data).map(function(file) {
++					const tasks = Object.keys(data).map(function(file) {
+ 						return fs.write(file, data[file]).catch(function(err) {
+ 							ui.addNotification(null, E('p', {}, [ _('Unable to save %s: %s').format(file, err) ]));
+ 						});
+-					})).then(ui.hideModal);
++					});
++
++					if (allowUntrustedUploads) {
++						if (!uci.get('luci', 'package_manager'))
++							uci.add('luci', 'package_manager', 'package_manager');
++
++						uci.set('luci', 'package_manager', 'allow_untrusted_uploads', allowUntrustedUploads.checked ? '1' : '0');
++						tasks.push(uci.save().then(function() {
++							return callUciCommit('luci');
++						}).then(function() {
++							updateUntrustedUploadStatus();
++						}).catch(function(err) {
++							ui.addNotification(null, E('p', {}, [ _('Unable to save package manager settings: %s').format(err) ]));
++						}));
++					}
++
++					Promise.all(tasks).then(ui.hideModal);
+ 				},
+ 				'disabled': isReadonlyView
+ 			}, _('Save')),
+@@ -1069,8 +1158,12 @@ function handleUpload(ev)
+ {
+ 	const path = '/tmp/upload.%s'.format(L.hasSystemFeature('apk') ? 'apk' : 'ipk');
+ 	return ui.uploadFile(path).then(L.bind(function(btn, res) {
++		const warning = L.hasSystemFeature('apk') && !untrustedUploadsEnabled()
++			? _('Untrusted local APK installation is currently blocked. If this package is unsigned or otherwise not trusted by apk, enable <em>Allow untrusted local packages</em> in Configure APK before installing it. Really attempt to install <em>%h</em>?').format(res.name)
++			: _('Installing packages from untrusted sources is a potential security risk! Really attempt to install <em>%h</em>?').format(res.name);
++
+ 		ui.showModal(_('Manually install package'), [
+-			E('p', {}, _('Installing packages from untrusted sources is a potential security risk! Really attempt to install <em>%h</em>?').format(res.name)),
++			E('p', {}, warning),
+ 			E('ul', {}, [
+ 				res.size ? E('li', {}, '%s: %1024.2mB'.format(_('Size'), res.size)) : '',
+ 				res.checksum ? E('li', {}, '%s: %s'.format(_('MD5'), res.checksum)) : '',
+@@ -1148,7 +1241,12 @@ function handleInput(ev) {
+ 
+ return view.extend({
+ 	load() {
+-		return downloadLists();
++		return Promise.all([
++			downloadLists(),
++			L.hasSystemFeature('apk') ? uci.load('luci') : Promise.resolve()
++		]).then(function(data) {
++			return data[0];
++		});
+ 	},
+ 
+ 	render(listData) {
+@@ -1190,7 +1288,16 @@ return view.extend({
+ 				]),
+ 
+ 				E('div', {}, [
+-					E('label', {}, _('Actions') + ':'), ' ',
++					E('label', {}, [
++						_('Actions') + ':',
++						L.hasSystemFeature('apk') ? E('span', {
++							'class': 'untrusted-upload-status',
++							'data-tooltip': _('Change this setting in Configure APK.')
++						}, [
++							_('Untrusted local APKs') + ': ',
++							renderUntrustedUploadStatus()
++						]) : ''
++					]), ' ',
+ 					E('span', { 'class': 'control-group' }, [
+ 						E('button', { 'class': 'btn cbi-button-positive', 'data-command': 'update', 'click': handlePkg, 'disabled': isReadonlyView }, [ _('Update lists…') ]), ' ',
+ 						E('button', { 'class': 'btn cbi-button-action', 'click': handleUpload, 'disabled': isReadonlyView }, [ _('Upload Package…') ]), ' ',
+diff --git a/applications/luci-app-package-manager/root/usr/libexec/package-manager-call b/applications/luci-app-package-manager/root/usr/libexec/package-manager-call
+index 3a4175783a0ba5389902885f5b370d161661c40b..d83457911d555f0b542a79062868ef02c7c743fe 100755
+--- a/applications/luci-app-package-manager/root/usr/libexec/package-manager-call
++++ b/applications/luci-app-package-manager/root/usr/libexec/package-manager-call
+@@ -30,6 +30,7 @@ case "$action" in
+ 	install|update|upgrade|remove)
+ 		(
+ 			cmd="$ipkg_bin"
++			requested_action="$action"
+ 
+ 			# APK have command renamed
+ 			if [ $ipkg_bin = "apk" ]; then
+@@ -87,6 +88,19 @@ case "$action" in
+ 				done
+ 			fi
+ 
++			if [ "$ipkg_bin" = "apk" ] &&
++			   [ "$requested_action" = "install" ] &&
++			   [ "$#" -eq 1 ] &&
++			   [ "$1" = "/tmp/upload.apk" ] &&
++			   [ "$(uci -q get luci.package_manager.allow_untrusted_uploads)" = "1" ]; then
++				cmd="$cmd --allow-untrusted --force-non-repository"
++			fi
++
++			# Prevent package names and paths from being parsed as apk options.
++			if [ "$ipkg_bin" = "apk" ] && [ "$#" -gt 0 ]; then
++				set -- -- "$@"
++			fi
++
+ 			if flock -x 200; then
+ 				pkmcmd="$cmd $action $@"
+ 				$cmd $action "$@" </dev/null >/tmp/ipkg.out 2>/tmp/ipkg.err
+diff --git a/applications/luci-app-package-manager/root/usr/share/rpcd/acl.d/luci-app-package-manager.json b/applications/luci-app-package-manager/root/usr/share/rpcd/acl.d/luci-app-package-manager.json
+index 8d551860e892f11656110178cbb35db10c40676c..ade01edbdeb73708aa85206824fbda163b654830 100644
+--- a/applications/luci-app-package-manager/root/usr/share/rpcd/acl.d/luci-app-package-manager.json
++++ b/applications/luci-app-package-manager/root/usr/share/rpcd/acl.d/luci-app-package-manager.json
+@@ -14,7 +14,8 @@
+ 			},
+ 			"ubus": {
+ 				"luci": [ "getMountPoints" ]
+-			}
++			},
++			"uci": [ "luci" ]
+ 		},
+ 		"write": {
+ 			"file": {
+@@ -31,7 +32,8 @@
+ 				"/etc/apk/repositories.d/customfeeds.list": [ "write" ],
+ 				"/tmp/upload.ipk": [ "write" ],
+ 				"/tmp/upload.apk": [ "write" ]
+-			}
++			},
++			"uci": [ "luci" ]
+ 		}
+ 	}
+ }
+-- 
+2.55.0.windows.4

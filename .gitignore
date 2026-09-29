@@ -1,0 +1,3 @@
+*.apk
+*.adb
+/release/
