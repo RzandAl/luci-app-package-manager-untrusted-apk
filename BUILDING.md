@@ -149,10 +149,14 @@ metadata. Check out the exact patched commit when reproducing the released APK.
 
 ## Release checksums
 
+The SDK emits `luci-app-package-manager-26.272.39633~4836c11.apk`. The
+published copy has the GitHub-safe, tag-based filename shown below; its content
+and internal package version are unchanged.
+
 The `r1` release bundle contains:
 
 ```text
-luci-app-package-manager-26.272.39633~4836c11.apk
+luci-app-package-manager-openwrt-25.12-067535e-r1.apk
 luci-app-package-manager-untrusted-upload-067535e.patch
 SHA256SUMS
 ```
@@ -160,12 +164,12 @@ SHA256SUMS
 Expected hashes:
 
 ```text
-de487b6d8817ecc12bf057982e1f8e8d760a0ed5a83d56c959af94e0794ec6f5  luci-app-package-manager-26.272.39633~4836c11.apk
+de487b6d8817ecc12bf057982e1f8e8d760a0ed5a83d56c959af94e0794ec6f5  luci-app-package-manager-openwrt-25.12-067535e-r1.apk
 91e8aeb24e6892897ac5d7298c16be724f737107626af90c7c27ac5df6d5a800  luci-app-package-manager-untrusted-upload-067535e.patch
 ```
 
 The expected SHA-256 of `SHA256SUMS` itself is:
 
 ```text
-87fdae5aee58d7d30e14a7209cb6c9ab92e66b78447b473651383db706abbd8c
+5a8a8a14cb1e5abc8cfdb47c4c0f9125c543a69bc7bfefe86c3d89224597cbaa
 ```

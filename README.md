@@ -17,6 +17,7 @@ package maintainer script. The released APK is a rebuilt
 | Patched source | [`4836c113cdbd8c01b4586970d9471541084aaaec`](https://github.com/RzandAl/luci/commit/4836c113cdbd8c01b4586970d9471541084aaaec) |
 | Release tag | `openwrt-25.12-067535e-r1` |
 | APK package version | `26.272.39633~4836c11` |
+| Release APK asset | `luci-app-package-manager-openwrt-25.12-067535e-r1.apk` |
 | Package architecture | `noarch` |
 
 The release was built with the OpenWrt 25.12.5 SDK for `ramips/mt7621` and
@@ -58,9 +59,12 @@ or repository operations.
 
 Download these assets from the matching GitHub Release:
 
-- `luci-app-package-manager-26.272.39633~4836c11.apk`
+- `luci-app-package-manager-openwrt-25.12-067535e-r1.apk`
 - `luci-app-package-manager-untrusted-upload-067535e.patch`
 - `SHA256SUMS`
+
+The release asset uses a GitHub-safe, tag-based filename. Its internal APK
+package version remains `26.272.39633~4836c11`.
 
 Verify the downloaded files:
 
@@ -75,7 +79,7 @@ package manager cannot yet install this untrusted local APK:
 apk add \
     --allow-untrusted \
     --force-non-repository \
-    ./luci-app-package-manager-26.272.39633~4836c11.apk
+    ./luci-app-package-manager-openwrt-25.12-067535e-r1.apk
 ```
 
 After installation, open **System → Software → Configure APK**, enable
