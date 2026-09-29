@@ -20,8 +20,7 @@ package maintainer script. The released APK is a rebuilt
 | Release APK asset | `luci-app-package-manager-openwrt-25.12-067535e-r1.apk` |
 | Package architecture | `noarch` |
 
-The release was built with the OpenWrt 25.12.5 SDK for `ramips/mt7621` and
-tested on OpenWrt 25.12.2 with apk-tools 3.0.5. Although the APK payload is
+The release was built with the OpenWrt 25.12.5 SDK for `ramips/mt7621` and functionally tested on a Xiaomi Mi Router 3G (`ramips/mt7621`) running OpenWrt 25.12.2 and 25.12.5, and on a Cudy WR3000S v1 (`mediatek/filogic`) running OpenWrt 25.12.5. The OpenWrt 25.12.2 Xiaomi validation used apk-tools 3.0.5. Although the APK payload is
 architecture-independent, compatibility is only claimed for the OpenWrt 25.12
 release line with the corresponding LuCI package manager.
 
