@@ -1,0 +1,54 @@
+name: Validation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate standalone patch
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Apply and inspect patch
+        run: |
+          set -eu
+
+          base_commit='067535eaf51a59582b775a8b588a9b05810f8030'
+          patch_file="${GITHUB_WORKSPACE}/patches/luci-app-package-manager-untrusted-upload-067535e.patch"
+          luci_tree="${RUNNER_TEMP}/luci"
+
+          test "$(sha256sum "$patch_file" | awk '{ print $1 }')" = \
+              '91e8aeb24e6892897ac5d7298c16be724f737107626af90c7c27ac5df6d5a800'
+
+          git init "$luci_tree"
+          git -C "$luci_tree" remote add origin \
+              https://github.com/openwrt/luci.git
+          git -C "$luci_tree" fetch --depth=1 origin "$base_commit"
+          git -C "$luci_tree" switch --detach FETCH_HEAD
+
+          git -C "$luci_tree" apply --check "$patch_file"
+          git -C "$luci_tree" apply "$patch_file"
+          git -C "$luci_tree" diff --check
+
+          package_root="${luci_tree}/applications/luci-app-package-manager"
+
+          bash -n \
+              "${package_root}/root/usr/libexec/package-manager-call"
+
+          python3 -m json.tool \
+              "${package_root}/root/usr/share/rpcd/acl.d/luci-app-package-manager.json" \
+              >/dev/null
+
+          node --check \
+              "${package_root}/htdocs/luci-static/resources/view/package-manager.js"

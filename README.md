@@ -87,128 +87,44 @@ Each uploaded APK still requires a separate confirmation.
 
 ## Security model
 
-Enabling this option bypasses APK signature trust for the uploaded local file.
-Only install APK files whose origin and checksum you have independently
-verified.
+Enabling this option bypasses APK signature trust only for the uploaded local
+file and does not silently approve installation. Verify the file's origin and
+checksum before enabling the option or confirming an upload.
 
-The setting does not silently approve installations. LuCI still displays a
-confirmation dialog for each uploaded package. The extra trust flags are never
-applied to package names, URLs, arbitrary filesystem paths, upgrades, removals,
-or repository operations.
+The backend scope and operations that remain unaffected are documented in
+[Security model](docs/SECURITY.md).
 
-## Install
+## Release packages
 
-Download these assets from the matching
-[GitHub Release](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/tag/openwrt-25.12-067535e-r1):
+Assets for
+[`openwrt-25.12-067535e-r1`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/tag/openwrt-25.12-067535e-r1):
 
 - [`luci-app-package-manager-openwrt-25.12-067535e-r1.apk`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r1/luci-app-package-manager-openwrt-25.12-067535e-r1.apk)
 - [`luci-app-package-manager-untrusted-upload-067535e.patch`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r1/luci-app-package-manager-untrusted-upload-067535e.patch)
 - [`SHA256SUMS`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r1/SHA256SUMS)
 
-The release asset uses a GitHub-safe, tag-based filename. Its internal APK
-package version remains `26.272.39633~4836c11`.
-
-Verify the downloaded files:
-
-```sh
-sha256sum -c SHA256SUMS
-```
-
-The first installation must be performed in a terminal because the stock LuCI
-package manager cannot yet install this untrusted local APK:
-
-```sh
-apk add \
-    --allow-untrusted \
-    --force-non-repository \
-    ./luci-app-package-manager-openwrt-25.12-067535e-r1.apk
-```
-
-After installation, open **System → Software → Configure APK**, enable
-**Allow untrusted local packages**, and press **Save**. Every subsequent local
-APK upload still requires explicit confirmation.
-
-## Return to the repository package
-
-First update the indexes and determine the package version currently offered by
-the configured OpenWrt repositories:
-
-```sh
-apk update
-
-REPO_VERSION="$(
-    apk query \
-        --from repositories \
-        --available \
-        --fields version \
-        luci-app-package-manager |
-    sed -n 's/^Version:[[:space:]]*//p' |
-    head -n 1
-)"
-
-printf 'Repository version: %s\n' "$REPO_VERSION"
-```
-
-Simulate the package-only rollback before changing the router:
-
-```sh
-apk --simulate add \
-    "luci-app-package-manager=$REPO_VERSION"
-```
-
-Inspect the transaction. It should replace only `luci-app-package-manager`.
-Do not continue if unrelated system packages are listed.
-
-Then install the repository version and remove the temporary exact-version
-constraint from APK's world file:
-
-```sh
-apk add "luci-app-package-manager=$REPO_VERSION"
-apk add luci-app-package-manager
-```
-
-The final world constraint should be unversioned:
-
-```sh
-grep '^luci-app-package-manager' /etc/apk/world
-```
-
-Expected output:
-
-```text
-luci-app-package-manager
-```
-
-The now-unused setting may optionally be removed:
-
-```sh
-uci -q delete luci.package_manager.allow_untrusted_uploads
-uci commit luci
-```
-
-Do **not** use `apk upgrade --available` as a package-only rollback command.
-That option resets package selection more broadly and may schedule unrelated
-system upgrades or replacements.
+The APK is intentionally untrusted. Verify `SHA256SUMS` and perform the first
+installation from a terminal; see [Installation and rollback](docs/INSTALLATION.md)
+for the complete procedure.
 
 ## Documentation
 
+- [Installation, configuration, verification, and rollback](docs/INSTALLATION.md)
+- [Security model](docs/SECURITY.md)
+- [Release validation](docs/VALIDATION.md)
 - [Build and release verification](BUILDING.md)
-- [Security model](#security-model)
-- [Installation](#install)
-- [Safe package-only rollback](#return-to-the-repository-package)
+- [Automated patch validation](.github/workflows/validate.yml)
 
 ## Tests and validation
 
-Validation for the `r1` release covered:
+The `r1` release validation covered exact source and patch provenance, clean
+standalone patch application, APK metadata and payload inspection, release
+checksums, and runtime behavior on the devices listed in
+[Compatibility](#compatibility).
 
-- exact source commit and standalone patch provenance;
-- standalone patch application against upstream base
-  `067535eaf51a59582b775a8b588a9b05810f8030`;
-- APK metadata, shell syntax, RPC ACL JSON, payload paths, and release checksums;
-- runtime behavior on the Xiaomi and Cudy devices listed in
-  [Compatibility](#compatibility), including the default blocked state,
-  explicit opt-in, per-upload confirmation, and successful untrusted local APK
-  installation.
+The complete recorded scope is in [Release validation](docs/VALIDATION.md),
+with reproduction commands in [BUILDING.md](BUILDING.md). The repository CI
+also repeats clean patch application and syntax validation on every change.
 
 ## Source provenance
 
