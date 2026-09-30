@@ -112,7 +112,7 @@ for the complete procedure.
 - [Installation, configuration, verification, and rollback](docs/INSTALLATION.md)
 - [Security model](docs/SECURITY.md)
 - [Release validation](docs/VALIDATION.md)
-- [Build and release verification](BUILDING.md)
+- [Build and release verification](docs/BUILDING.md)
 - [Automated patch validation](.github/workflows/validate.yml)
 
 ## Tests and validation
@@ -123,7 +123,7 @@ checksums, and runtime behavior on the devices listed in
 [Compatibility](#compatibility).
 
 The complete recorded scope is in [Release validation](docs/VALIDATION.md),
-with reproduction commands in [BUILDING.md](BUILDING.md). The repository CI
+with reproduction commands in [BUILDING.md](docs/BUILDING.md). The repository CI
 also repeats clean patch application and syntax validation on every change.
 
 ## Source provenance
