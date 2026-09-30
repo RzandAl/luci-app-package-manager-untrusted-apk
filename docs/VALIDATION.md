@@ -28,7 +28,7 @@ The release was checked against:
 - clean standalone patch application to the upstream base;
 - `git diff --check` after patch application.
 
-Reproduction commands are documented in [BUILDING.md](../BUILDING.md).
+Reproduction commands are documented in [BUILDING.md](BUILDING.md).
 
 ## Artifact validation
 
@@ -42,7 +42,7 @@ The published bundle was checked for:
 - unchanged APK contents after renaming the SDK output to the release filename.
 
 The exact expected hashes and APK inspection commands are in
-[BUILDING.md](../BUILDING.md#inspect-the-apk).
+[BUILDING.md](BUILDING.md#inspect-the-apk).
 
 ## Runtime validation
 
