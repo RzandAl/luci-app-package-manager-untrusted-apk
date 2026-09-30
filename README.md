@@ -49,7 +49,7 @@ package maintainer script. The released APK is a rebuilt
 | Build | Official OpenWrt 25.12.5 SDK for `ramips/mt7621` |
 | Runtime — Xiaomi Mi Router 3G | OpenWrt 25.12.2 and 25.12.5 (`ramips/mt7621`) |
 | Runtime — Cudy WR3000S v1 | OpenWrt 25.12.5 (`mediatek/filogic`) |
-| Validation | Default blocked state, explicit opt-in, per-upload confirmation, and untrusted local APK installation |
+| Validation | Blocked by default; explicit opt-in and per-upload confirmation required |
 
 The released APK is architecture-independent (`noarch`). Compatibility outside
 the OpenWrt 25.12 release line is not claimed.
