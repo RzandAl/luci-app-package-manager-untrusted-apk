@@ -1,7 +1,7 @@
 # Release validation
 
 This document records the validation scope for release
-`openwrt-25.12-067535e-r1`. It is a release record, not a compatibility claim
+`openwrt-25.12-067535e-r2`. It is a release record, not a compatibility claim
 for later OpenWrt or LuCI revisions.
 
 ## Environment matrix
@@ -9,8 +9,10 @@ for later OpenWrt or LuCI revisions.
 | Area | Environment |
 | --- | --- |
 | Build | Official OpenWrt 25.12.5 SDK for `ramips/mt7621` |
-| Runtime — Xiaomi Mi Router 3G | OpenWrt 25.12.2 and 25.12.5 (`ramips/mt7621`) |
-| Runtime — Cudy WR3000S v1 | OpenWrt 25.12.5 (`mediatek/filogic`) |
+| r2 runtime — Xiaomi Mi Router 3G | OpenWrt 25.12.5 (`ramips/mt7621`) |
+| Earlier r1 baseline — Xiaomi Mi Router 3G | OpenWrt 25.12.2 (`ramips/mt7621`) |
+| Earlier r1 baseline — Cudy WR3000S v1 | OpenWrt 25.12.5 (`mediatek/filogic`) |
+| Browser UI | Firefox, Chrome, and Microsoft Edge |
 
 The resulting package reports `arch: noarch`; the target SDK was still used to
 resolve and validate the OpenWrt package environment.
@@ -22,7 +24,7 @@ The release was checked against:
 - upstream LuCI base commit
   `067535eaf51a59582b775a8b588a9b05810f8030`;
 - exact patched LuCI commit
-  `4836c113cdbd8c01b4586970d9471541084aaaec`;
+  `e1fb46d3ecae5ede2eabcfe1792697ac734bb07a`;
 - the standalone patch in
   `patches/luci-app-package-manager-untrusted-upload-067535e.patch`;
 - clean standalone patch application to the upstream base;
@@ -35,7 +37,9 @@ Reproduction commands are documented in [BUILDING.md](BUILDING.md).
 The published bundle was checked for:
 
 - matching release checksums;
-- expected APK package name, version, and `noarch` metadata;
+- APK SHA-256
+  `eca926ba1a94611df054de07da466937532b96e9f7f5296d6d75a9b929e9bad8`;
+- package version `26.278.01645~e1fb46d` and `noarch` metadata;
 - expected payload paths;
 - valid shell syntax for `package-manager-call`;
 - valid JSON for the RPC ACL;
@@ -50,13 +54,22 @@ Runtime validation covered:
 
 - first installation from a terminal with the required trust flags;
 - the default **Blocked** state;
+- a blocked upload invoking `apk add -- /tmp/upload.apk`, rejected by APK with
+  `UNTRUSTED signature` and exit code 99;
 - explicit opt-in through **Configure APK**;
 - the **Allowed** warning state after opt-in;
 - a separate confirmation for each uploaded APK;
-- successful installation of an untrusted local APK after confirmation.
+- successful installation after confirmation with exactly
+  `apk --allow-untrusted --force-non-repository add -- /tmp/upload.apk`;
+- restoring `luci.package_manager.allow_untrusted_uploads=0` after the test;
+- removal of `/tmp/upload.apk` after package-manager completion.
 
-The same user-visible flow was checked on the Xiaomi and Cudy devices listed in
-the environment matrix.
+The complete r2 flow above was checked on the Xiaomi device running OpenWrt
+25.12.5. The earlier r1 device results remain in the matrix as baseline coverage
+and are not presented as tests of the r2 binary.
+
+The screenshots in this repository were captured from the r2 interface on
+OpenWrt 25.12.5.
 
 ## Continuous validation
 

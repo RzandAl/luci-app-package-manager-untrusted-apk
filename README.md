@@ -16,10 +16,10 @@ package maintainer script. The released APK is a rebuilt
 | --- | --- |
 | OpenWrt release line | 25.12 |
 | Upstream base | [`067535eaf51a59582b775a8b588a9b05810f8030`](https://github.com/openwrt/luci/commit/067535eaf51a59582b775a8b588a9b05810f8030) |
-| Patched source | [`4836c113cdbd8c01b4586970d9471541084aaaec`](https://github.com/RzandAl/luci/commit/4836c113cdbd8c01b4586970d9471541084aaaec) |
-| Release tag | `openwrt-25.12-067535e-r1` |
-| APK package version | `26.272.39633~4836c11` |
-| Release APK asset | `luci-app-package-manager-openwrt-25.12-067535e-r1.apk` |
+| Patched source | [`e1fb46d3ecae5ede2eabcfe1792697ac734bb07a`](https://github.com/RzandAl/luci/commit/e1fb46d3ecae5ede2eabcfe1792697ac734bb07a) |
+| Release tag | `openwrt-25.12-067535e-r2` |
+| APK package version | `26.278.01645~e1fb46d` |
+| Release APK asset | `luci-app-package-manager-openwrt-25.12-067535e-r2.apk` |
 | Package architecture | `noarch` |
 
 ## What the patch changes
@@ -30,6 +30,8 @@ package maintainer script. The released APK is a rebuilt
 - Keeps the setting disabled by default.
 - Shows the current **Blocked** or **Allowed** state on the Software page.
 - Keeps the existing confirmation dialog for every uploaded package.
+- Reloads the persisted UCI value if saving the setting fails, so the displayed
+  state cannot remain out of sync with the backend.
 - Adds `--allow-untrusted` and `--force-non-repository` in the backend only
   when all of the following are true:
   - the package manager is `apk`;
@@ -47,8 +49,9 @@ package maintainer script. The released APK is a rebuilt
 | --- | --- |
 | Target | OpenWrt 25.12 with APK |
 | Build | Official OpenWrt 25.12.5 SDK for `ramips/mt7621` |
-| Runtime — Xiaomi Mi Router 3G | OpenWrt 25.12.2 and 25.12.5 (`ramips/mt7621`) |
-| Runtime — Cudy WR3000S v1 | OpenWrt 25.12.5 (`mediatek/filogic`) |
+| Runtime — Xiaomi Mi Router 3G | r2 on OpenWrt 25.12.5; r1 baseline on 25.12.2 (`ramips/mt7621`) |
+| Runtime — Cudy WR3000S v1 | r1 baseline on OpenWrt 25.12.5 (`mediatek/filogic`) |
+| Browser UI | Firefox, Chrome, and Microsoft Edge |
 | Validation | Blocked by default; explicit opt-in and per-upload confirmation required |
 
 The released APK is architecture-independent (`noarch`). Compatibility outside
@@ -97,11 +100,11 @@ The backend scope and operations that remain unaffected are documented in
 ## Release packages
 
 Assets for
-[`openwrt-25.12-067535e-r1`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/tag/openwrt-25.12-067535e-r1):
+[`openwrt-25.12-067535e-r2`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/tag/openwrt-25.12-067535e-r2):
 
-- [`luci-app-package-manager-openwrt-25.12-067535e-r1.apk`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r1/luci-app-package-manager-openwrt-25.12-067535e-r1.apk)
-- [`luci-app-package-manager-untrusted-upload-067535e.patch`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r1/luci-app-package-manager-untrusted-upload-067535e.patch)
-- [`SHA256SUMS`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r1/SHA256SUMS)
+- [`luci-app-package-manager-openwrt-25.12-067535e-r2.apk`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r2/luci-app-package-manager-openwrt-25.12-067535e-r2.apk)
+- [`luci-app-package-manager-untrusted-upload-067535e.patch`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r2/luci-app-package-manager-untrusted-upload-067535e.patch)
+- [`SHA256SUMS`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r2/SHA256SUMS)
 
 The APK is intentionally untrusted. Verify `SHA256SUMS` and perform the first
 installation from a terminal; see [Installation and rollback](docs/INSTALLATION.md)
@@ -117,10 +120,11 @@ for the complete procedure.
 
 ## Tests and validation
 
-The `r1` release validation covered exact source and patch provenance, clean
+The `r2` release validation covered exact source and patch provenance, clean
 standalone patch application, APK metadata and payload inspection, release
-checksums, and runtime behavior on the devices listed in
-[Compatibility](#compatibility).
+checksums, and the complete blocked and allowed runtime paths on OpenWrt 25.12.5.
+Earlier r1 device results are retained separately in
+[Compatibility](#compatibility) instead of being attributed to the r2 binary.
 
 The complete recorded scope is in [Release validation](docs/VALIDATION.md),
 with reproduction commands in [BUILDING.md](docs/BUILDING.md). The repository CI
@@ -131,7 +135,7 @@ also repeats clean patch application and syntax validation on every change.
 - Development branch:
   [`fix/package-manager-untrusted-upload-067535e`](https://github.com/RzandAl/luci/tree/fix/package-manager-untrusted-upload-067535e)
 - Exact signed commit:
-  [`4836c113cdbd8c01b4586970d9471541084aaaec`](https://github.com/RzandAl/luci/commit/4836c113cdbd8c01b4586970d9471541084aaaec)
+  [`e1fb46d3ecae5ede2eabcfe1792697ac734bb07a`](https://github.com/RzandAl/luci/commit/e1fb46d3ecae5ede2eabcfe1792697ac734bb07a)
 - Standalone source patch:
   [`patches/luci-app-package-manager-untrusted-upload-067535e.patch`](patches/luci-app-package-manager-untrusted-upload-067535e.patch)
 - Related upstream report:
