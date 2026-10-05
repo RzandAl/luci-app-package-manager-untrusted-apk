@@ -49,8 +49,8 @@ package maintainer script. The released APK is a rebuilt
 | --- | --- |
 | Target | OpenWrt 25.12 with APK |
 | Build | Official OpenWrt 25.12.5 SDK for `ramips/mt7621` |
-| Runtime — Xiaomi Mi Router 3G | r2 on OpenWrt 25.12.5; r1 baseline on 25.12.2 (`ramips/mt7621`) |
-| Runtime — Cudy WR3000S v1 | r1 baseline on OpenWrt 25.12.5 (`mediatek/filogic`) |
+| Runtime — Xiaomi Mi Router 3G | r2 on OpenWrt 25.12.2 and 25.12.5 (`ramips/mt7621`) |
+| Runtime — Cudy WR3000S v1 | r2 on OpenWrt 25.12.5 (`mediatek/filogic`) |
 | Browser UI | Firefox, Chrome, and Microsoft Edge |
 | Validation | Blocked by default; explicit opt-in and per-upload confirmation required |
 
@@ -123,8 +123,8 @@ for the complete procedure.
 The `r2` release validation covered exact source and patch provenance, clean
 standalone patch application, APK metadata and payload inspection, release
 checksums, and the complete blocked and allowed runtime paths on OpenWrt 25.12.5.
-Earlier r1 device results are retained separately in
-[Compatibility](#compatibility) instead of being attributed to the r2 binary.
+The r2 package was also checked on OpenWrt 25.12.2 and on both devices listed in
+[Compatibility](#compatibility).
 
 The complete recorded scope is in [Release validation](docs/VALIDATION.md),
 with reproduction commands in [BUILDING.md](docs/BUILDING.md). The repository CI

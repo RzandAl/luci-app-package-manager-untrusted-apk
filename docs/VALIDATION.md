@@ -9,9 +9,8 @@ for later OpenWrt or LuCI revisions.
 | Area | Environment |
 | --- | --- |
 | Build | Official OpenWrt 25.12.5 SDK for `ramips/mt7621` |
-| r2 runtime — Xiaomi Mi Router 3G | OpenWrt 25.12.5 (`ramips/mt7621`) |
-| Earlier r1 baseline — Xiaomi Mi Router 3G | OpenWrt 25.12.2 (`ramips/mt7621`) |
-| Earlier r1 baseline — Cudy WR3000S v1 | OpenWrt 25.12.5 (`mediatek/filogic`) |
+| r2 runtime — Xiaomi Mi Router 3G | OpenWrt 25.12.2 and 25.12.5 (`ramips/mt7621`) |
+| r2 runtime — Cudy WR3000S v1 | OpenWrt 25.12.5 (`mediatek/filogic`) |
 | Browser UI | Firefox, Chrome, and Microsoft Edge |
 
 The resulting package reports `arch: noarch`; the target SDK was still used to
@@ -64,9 +63,10 @@ Runtime validation covered:
 - restoring `luci.package_manager.allow_untrusted_uploads=0` after the test;
 - removal of `/tmp/upload.apk` after package-manager completion.
 
-The complete r2 flow above was checked on the Xiaomi device running OpenWrt
-25.12.5. The earlier r1 device results remain in the matrix as baseline coverage
-and are not presented as tests of the r2 binary.
+The exact command, result, UCI-state, and upload-cleanup sequence above was
+recorded on the Xiaomi device running OpenWrt 25.12.5. The r2 package and its
+user-visible flow were also checked on the Xiaomi device running OpenWrt 25.12.2
+and on the Cudy device running OpenWrt 25.12.5.
 
 The screenshots in this repository were captured from the r2 interface on
 OpenWrt 25.12.5.
