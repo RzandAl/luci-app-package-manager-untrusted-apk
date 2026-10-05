@@ -14,15 +14,17 @@ provided by the configured OpenWrt repositories.
 - Root shell access to the router.
 - All three assets from the same GitHub release.
 
-The current release was functionally validated on the devices listed in the
-project [Compatibility](../README.md#compatibility) table.
+The current release was functionally validated in the environment recorded in
+[Release validation](VALIDATION.md). The project
+[Compatibility](../README.md#compatibility) table also retains earlier device
+baseline results.
 
 ## Download and verify
 
 Download these assets from
-[`openwrt-25.12-067535e-r1`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/tag/openwrt-25.12-067535e-r1):
+[`openwrt-25.12-067535e-r2`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/tag/openwrt-25.12-067535e-r2):
 
-- `luci-app-package-manager-openwrt-25.12-067535e-r1.apk`
+- `luci-app-package-manager-openwrt-25.12-067535e-r2.apk`
 - `luci-app-package-manager-untrusted-upload-067535e.patch`
 - `SHA256SUMS`
 
@@ -36,7 +38,7 @@ Both listed files must report `OK`. Do not continue if a checksum fails or the
 files came from different release tags.
 
 The published APK uses a GitHub-safe, tag-based filename. Its internal package
-version remains `26.272.39633~4836c11`.
+version remains `26.278.01645~e1fb46d`.
 
 ## Install
 
@@ -47,7 +49,7 @@ package manager cannot yet install this untrusted local APK:
 apk add \
     --allow-untrusted \
     --force-non-repository \
-    ./luci-app-package-manager-openwrt-25.12-067535e-r1.apk
+    ./luci-app-package-manager-openwrt-25.12-067535e-r2.apk
 ```
 
 The APK replaces the stock `luci-app-package-manager`; it does not install a

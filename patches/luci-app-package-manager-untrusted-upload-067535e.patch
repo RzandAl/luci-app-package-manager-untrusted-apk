@@ -1,26 +1,5 @@
-From 4836c113cdbd8c01b4586970d9471541084aaaec Mon Sep 17 00:00:00 2001
-From: RazisID12 <182811733+RazisID12@users.noreply.github.com>
-Date: Mon, 28 Sep 2026 20:18:33 +0100
-Subject: [PATCH] luci-app-package-manager: allow untrusted local APK uploads
-
-Add an opt-in UCI setting for untrusted local APK uploads. Keep it
-disabled by default.
-
-When enabled, add --allow-untrusted and --force-non-repository only
-for an install request targeting exactly /tmp/upload.apk. The existing
-per-package confirmation remains in place, and the frontend cannot
-supply these flags.
-
-Ref: https://github.com/openwrt/luci/issues/8482
-Co-authored-by: AmleyID <324701712+AmleyID@users.noreply.github.com>
----
- .../resources/view/package-manager.js         | 119 +++++++++++++++++-
- .../root/usr/libexec/package-manager-call     |  14 +++
- .../rpcd/acl.d/luci-app-package-manager.json  |   6 +-
- 3 files changed, 131 insertions(+), 8 deletions(-)
-
 diff --git a/applications/luci-app-package-manager/htdocs/luci-static/resources/view/package-manager.js b/applications/luci-app-package-manager/htdocs/luci-static/resources/view/package-manager.js
-index 48476dbe167f8ce4bc8a552728f132810ae7084c..9b3cf966a1f11b91fdf856f6e24e92b50306e9f7 100644
+index 48476dbe167f8ce4bc8a552728f132810ae7084c..3a202b0942ba61a907da8ceccd01c8839cc8d7aa 100644
 --- a/applications/luci-app-package-manager/htdocs/luci-static/resources/view/package-manager.js
 +++ b/applications/luci-app-package-manager/htdocs/luci-static/resources/view/package-manager.js
 @@ -3,6 +3,7 @@
@@ -54,7 +33,7 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..9b3cf966a1f11b91fdf856f6e24e92b5
  	.controls > div > input {			\
  		width: auto;					\
  	}									\
-@@ -93,6 +110,13 @@ const callMountPoints = rpc.declare({
+@@ -93,6 +110,20 @@ const callMountPoints = rpc.declare({
  	expect: { result: [] }
  });
  
@@ -65,10 +44,17 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..9b3cf966a1f11b91fdf856f6e24e92b5
 +	reject: true
 +});
 +
++const callUciRevert = rpc.declare({
++	object: 'uci',
++	method: 'revert',
++	params: [ 'config' ],
++	reject: true
++});
++
  const packages = {
  	available: { providers: {}, pkgs: {} },
  	installed: { providers: {}, pkgs: {} }
-@@ -855,6 +879,33 @@ function handleManualInstall(ev)
+@@ -855,6 +886,42 @@ function handleManualInstall(ev)
  	]);
  }
  
@@ -99,10 +85,19 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..9b3cf966a1f11b91fdf856f6e24e92b5
 +	status.textContent = enabled ? _('Allowed') : _('Blocked');
 +}
 +
++function reloadUntrustedUploadSetting()
++{
++	uci.unload('luci');
++
++	return L.resolveDefault(uci.load('luci'), null).then(function() {
++		updateUntrustedUploadStatus();
++	});
++}
++
  function handleConfig(ev)
  {
  	const conf = {};
-@@ -910,6 +961,25 @@ function handleConfig(ev)
+@@ -910,6 +977,25 @@ function handleConfig(ev)
  			}, '%h'.format(conf[file])));
  		});
  
@@ -122,13 +117,13 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..9b3cf966a1f11b91fdf856f6e24e92b5
 +				])
 +			]));
 +			body.push(E('p', { 'class': 'cbi-value-description untrusted-upload-description' },
-+				_('Permit installation of uploaded local APK files without a trusted signature. Each installation still requires confirmation.')));
++				_('Permit installation of uploaded local APK files with an untrusted or missing signature. Each installation still requires confirmation.')));
 +		}
 +
  		body.push(E('div', { 'class': 'button-row' }, [
  			E('div', {
  				'class': 'btn cbi-button-neutral',
-@@ -920,7 +990,10 @@ function handleConfig(ev)
+@@ -920,7 +1006,10 @@ function handleConfig(ev)
  				'class': 'btn cbi-button-positive',
  				'click': function(ev) {
  					const data = {};
@@ -140,7 +135,7 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..9b3cf966a1f11b91fdf856f6e24e92b5
  						.forEach(function(textarea) {
  							data[textarea.getAttribute('name')] = textarea.value
  						});
-@@ -929,11 +1002,27 @@ function handleConfig(ev)
+@@ -929,11 +1018,32 @@ function handleConfig(ev)
  						E('p', { 'class': 'spinning' }, _('Saving configuration data…'))
  					]);
  
@@ -162,21 +157,33 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..9b3cf966a1f11b91fdf856f6e24e92b5
 +						}).then(function() {
 +							updateUntrustedUploadStatus();
 +						}).catch(function(err) {
-+							ui.addNotification(null, E('p', {}, [ _('Unable to save package manager settings: %s').format(err) ]));
++							return L.resolveDefault(callUciRevert('luci'), null)
++								.then(reloadUntrustedUploadSetting)
++								.then(function() { throw err });
 +						}));
 +					}
 +
-+					Promise.all(tasks).then(ui.hideModal);
++					Promise.all(tasks).then(ui.hideModal).catch(function(err) {
++						ui.hideModal();
++						ui.addNotification(null, E('p', {}, [ _('Unable to save package manager settings: %s').format(err) ]));
++					});
  				},
  				'disabled': isReadonlyView
  			}, _('Save')),
-@@ -1069,8 +1158,12 @@ function handleUpload(ev)
+@@ -1069,8 +1179,19 @@ function handleUpload(ev)
  {
  	const path = '/tmp/upload.%s'.format(L.hasSystemFeature('apk') ? 'apk' : 'ipk');
  	return ui.uploadFile(path).then(L.bind(function(btn, res) {
-+		const warning = L.hasSystemFeature('apk') && !untrustedUploadsEnabled()
-+			? _('Untrusted local APK installation is currently blocked. If this package is unsigned or otherwise not trusted by apk, enable <em>Allow untrusted local packages</em> in Configure APK before installing it. Really attempt to install <em>%h</em>?').format(res.name)
-+			: _('Installing packages from untrusted sources is a potential security risk! Really attempt to install <em>%h</em>?').format(res.name);
++		let warning;
++
++		if (L.hasSystemFeature('apk')) {
++			warning = untrustedUploadsEnabled()
++				? _('Signature trust verification will be bypassed for this uploaded APK. Install it only if you trust its source. Really attempt to install <em>%h</em>?').format(res.name)
++				: _('The apk package manager will enforce its normal signature trust checks for this uploaded package. To permit an untrusted or unsigned APK, enable <em>Allow untrusted local packages</em> in Configure APK. Really attempt to install <em>%h</em>?').format(res.name);
++		}
++		else {
++			warning = _('Installing packages from untrusted sources is a potential security risk! Really attempt to install <em>%h</em>?').format(res.name);
++		}
 +
  		ui.showModal(_('Manually install package'), [
 -			E('p', {}, _('Installing packages from untrusted sources is a potential security risk! Really attempt to install <em>%h</em>?').format(res.name)),
@@ -184,7 +191,7 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..9b3cf966a1f11b91fdf856f6e24e92b5
  			E('ul', {}, [
  				res.size ? E('li', {}, '%s: %1024.2mB'.format(_('Size'), res.size)) : '',
  				res.checksum ? E('li', {}, '%s: %s'.format(_('MD5'), res.checksum)) : '',
-@@ -1148,7 +1241,12 @@ function handleInput(ev) {
+@@ -1148,7 +1269,12 @@ function handleInput(ev) {
  
  return view.extend({
  	load() {
@@ -198,7 +205,7 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..9b3cf966a1f11b91fdf856f6e24e92b5
  	},
  
  	render(listData) {
-@@ -1190,7 +1288,16 @@ return view.extend({
+@@ -1190,7 +1316,16 @@ return view.extend({
  				]),
  
  				E('div', {}, [
@@ -272,5 +279,3 @@ index 8d551860e892f11656110178cbb35db10c40676c..ade01edbdeb73708aa85206824fbda16
  		}
  	}
  }
--- 
-2.55.0.windows.4

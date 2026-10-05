@@ -26,6 +26,12 @@ separate confirmation for every uploaded APK before installation begins.
 The frontend cannot submit arbitrary trust flags. The backend derives the
 additional flags only from the exact operation, argument, and UCI state above.
 
+The **Blocked** state blocks the trust bypass, not every local APK upload. LuCI
+does not attempt to reproduce APK signature verification in the browser. With
+the option disabled, the backend runs the normal `apk add -- /tmp/upload.apk`;
+a trusted package may install, while an unsigned or otherwise untrusted package
+is rejected by `apk`.
+
 ## Operations that remain unaffected
 
 The trust bypass is not applied to:

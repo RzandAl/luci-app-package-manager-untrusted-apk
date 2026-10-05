@@ -29,7 +29,7 @@ jobs:
           luci_tree="${RUNNER_TEMP}/luci"
 
           test "$(sha256sum "$patch_file" | awk '{ print $1 }')" = \
-              '91e8aeb24e6892897ac5d7298c16be724f737107626af90c7c27ac5df6d5a800'
+              '921cb36984cc9b7374e7554fccf59a42d491aef4b657b6da06aa1830f835d670'
 
           git init "$luci_tree"
           git -C "$luci_tree" remote add origin \
