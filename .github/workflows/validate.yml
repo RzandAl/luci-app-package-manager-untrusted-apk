@@ -29,7 +29,7 @@ jobs:
           luci_tree="${RUNNER_TEMP}/luci"
 
           test "$(sha256sum "$patch_file" | awk '{ print $1 }')" = \
-              '921cb36984cc9b7374e7554fccf59a42d491aef4b657b6da06aa1830f835d670'
+              '8cfbe3d45b11ea4688cbedb0af609584ce531180b61cc613f9400d8a8dbd9412'
 
           git init "$luci_tree"
           git -C "$luci_tree" remote add origin \
@@ -38,17 +38,38 @@ jobs:
           git -C "$luci_tree" switch --detach FETCH_HEAD
 
           git -C "$luci_tree" apply --check "$patch_file"
-          git -C "$luci_tree" apply "$patch_file"
-          git -C "$luci_tree" diff --check
+          git -C "$luci_tree" apply --index "$patch_file"
+          git -C "$luci_tree" diff --cached --check
+          test "$(git -C "$luci_tree" write-tree)" = \
+              '4840108cc406996d631b8c3fc8be42a0e15cf14b'
 
           package_root="${luci_tree}/applications/luci-app-package-manager"
 
           bash -n \
               "${package_root}/root/usr/libexec/package-manager-call"
-
           python3 -m json.tool \
               "${package_root}/root/usr/share/rpcd/acl.d/luci-app-package-manager.json" \
               >/dev/null
-
           node --check \
               "${package_root}/htdocs/luci-static/resources/view/package-manager.js"
+
+          grep -Fxq '/etc/config/luci-package-manager' "${package_root}/Makefile"
+
+          python3 - "$package_root" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          root = pathlib.Path(sys.argv[1])
+          acl = json.loads((root / 'root/usr/share/rpcd/acl.d/luci-app-package-manager.json').read_text())
+          permissions = acl['luci-app-package-manager']
+          for access in ('read', 'write'):
+              assert permissions[access]['uci'] == ['luci-package-manager'], access
+          assert permissions['write']['ubus']['uci'] == ['commit', 'revert']
+          config = (root / 'root/etc/config/luci-package-manager').read_text()
+          assert config == "config package_manager 'main'\n\toption allow_untrusted_uploads '0'\n"
+          backend = (root / 'root/usr/libexec/package-manager-call').read_text()
+          assert '--allow-untrusted' in backend
+          assert '--force-non-repository' not in backend
+          assert 'luci-package-manager.main.allow_untrusted_uploads' in backend
+          PY

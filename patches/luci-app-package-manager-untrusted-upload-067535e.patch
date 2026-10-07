@@ -1,5 +1,20 @@
+diff --git a/applications/luci-app-package-manager/Makefile b/applications/luci-app-package-manager/Makefile
+index d8398441d3..2b2fe229f8 100644
+--- a/applications/luci-app-package-manager/Makefile
++++ b/applications/luci-app-package-manager/Makefile
+@@ -15,6 +15,10 @@ PKG_MAINTAINER:=Jo-Philipp Wich <jo@mein.io>
+ 
+ PKG_PROVIDES:=luci-app-opkg
+ 
++define Package/luci-app-package-manager/conffiles
++/etc/config/luci-package-manager
++endef
++
+ include ../../luci.mk
+ 
+ # call BuildPackage - OpenWrt buildroot signature
 diff --git a/applications/luci-app-package-manager/htdocs/luci-static/resources/view/package-manager.js b/applications/luci-app-package-manager/htdocs/luci-static/resources/view/package-manager.js
-index 48476dbe167f8ce4bc8a552728f132810ae7084c..3a202b0942ba61a907da8ceccd01c8839cc8d7aa 100644
+index 48476dbe16..63dc7660b0 100644
 --- a/applications/luci-app-package-manager/htdocs/luci-static/resources/view/package-manager.js
 +++ b/applications/luci-app-package-manager/htdocs/luci-static/resources/view/package-manager.js
 @@ -3,6 +3,7 @@
@@ -33,7 +48,16 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..3a202b0942ba61a907da8ceccd01c883
  	.controls > div > input {			\
  		width: auto;					\
  	}									\
-@@ -93,6 +110,20 @@ const callMountPoints = rpc.declare({
+@@ -86,6 +103,8 @@ const css = '								\
+ ';
+ 
+ const isReadonlyView = !L.hasViewPermission() || null;
++const untrustedUploadConfig = 'luci-package-manager';
++const untrustedUploadSection = 'main';
+ 
+ const callMountPoints = rpc.declare({
+ 	object: 'luci',
+@@ -93,6 +112,20 @@ const callMountPoints = rpc.declare({
  	expect: { result: [] }
  });
  
@@ -54,13 +78,13 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..3a202b0942ba61a907da8ceccd01c883
  const packages = {
  	available: { providers: {}, pkgs: {} },
  	installed: { providers: {}, pkgs: {} }
-@@ -855,6 +886,42 @@ function handleManualInstall(ev)
+@@ -855,6 +888,42 @@ function handleManualInstall(ev)
  	]);
  }
  
 +function untrustedUploadsEnabled()
 +{
-+	return uci.get('luci', 'package_manager', 'allow_untrusted_uploads') === '1';
++	return uci.get(untrustedUploadConfig, untrustedUploadSection, 'allow_untrusted_uploads') === '1';
 +}
 +
 +function renderUntrustedUploadStatus()
@@ -87,9 +111,9 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..3a202b0942ba61a907da8ceccd01c883
 +
 +function reloadUntrustedUploadSetting()
 +{
-+	uci.unload('luci');
++	uci.unload(untrustedUploadConfig);
 +
-+	return L.resolveDefault(uci.load('luci'), null).then(function() {
++	return L.resolveDefault(uci.load(untrustedUploadConfig), null).then(function() {
 +		updateUntrustedUploadStatus();
 +	});
 +}
@@ -97,7 +121,7 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..3a202b0942ba61a907da8ceccd01c883
  function handleConfig(ev)
  {
  	const conf = {};
-@@ -910,6 +977,25 @@ function handleConfig(ev)
+@@ -910,6 +979,25 @@ function handleConfig(ev)
  			}, '%h'.format(conf[file])));
  		});
  
@@ -123,7 +147,7 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..3a202b0942ba61a907da8ceccd01c883
  		body.push(E('div', { 'class': 'button-row' }, [
  			E('div', {
  				'class': 'btn cbi-button-neutral',
-@@ -920,7 +1006,10 @@ function handleConfig(ev)
+@@ -920,7 +1008,10 @@ function handleConfig(ev)
  				'class': 'btn cbi-button-positive',
  				'click': function(ev) {
  					const data = {};
@@ -135,7 +159,7 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..3a202b0942ba61a907da8ceccd01c883
  						.forEach(function(textarea) {
  							data[textarea.getAttribute('name')] = textarea.value
  						});
-@@ -929,11 +1018,32 @@ function handleConfig(ev)
+@@ -929,11 +1020,32 @@ function handleConfig(ev)
  						E('p', { 'class': 'spinning' }, _('Saving configuration data…'))
  					]);
  
@@ -148,16 +172,16 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..3a202b0942ba61a907da8ceccd01c883
 +					});
 +
 +					if (allowUntrustedUploads) {
-+						if (!uci.get('luci', 'package_manager'))
-+							uci.add('luci', 'package_manager', 'package_manager');
++						if (!uci.get(untrustedUploadConfig, untrustedUploadSection))
++							uci.add(untrustedUploadConfig, 'package_manager', untrustedUploadSection);
 +
-+						uci.set('luci', 'package_manager', 'allow_untrusted_uploads', allowUntrustedUploads.checked ? '1' : '0');
++						uci.set(untrustedUploadConfig, untrustedUploadSection, 'allow_untrusted_uploads', allowUntrustedUploads.checked ? '1' : '0');
 +						tasks.push(uci.save().then(function() {
-+							return callUciCommit('luci');
++							return callUciCommit(untrustedUploadConfig);
 +						}).then(function() {
 +							updateUntrustedUploadStatus();
 +						}).catch(function(err) {
-+							return L.resolveDefault(callUciRevert('luci'), null)
++							return L.resolveDefault(callUciRevert(untrustedUploadConfig), null)
 +								.then(reloadUntrustedUploadSetting)
 +								.then(function() { throw err });
 +						}));
@@ -170,7 +194,7 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..3a202b0942ba61a907da8ceccd01c883
  				},
  				'disabled': isReadonlyView
  			}, _('Save')),
-@@ -1069,8 +1179,19 @@ function handleUpload(ev)
+@@ -1069,8 +1181,19 @@ function handleUpload(ev)
  {
  	const path = '/tmp/upload.%s'.format(L.hasSystemFeature('apk') ? 'apk' : 'ipk');
  	return ui.uploadFile(path).then(L.bind(function(btn, res) {
@@ -191,21 +215,21 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..3a202b0942ba61a907da8ceccd01c883
  			E('ul', {}, [
  				res.size ? E('li', {}, '%s: %1024.2mB'.format(_('Size'), res.size)) : '',
  				res.checksum ? E('li', {}, '%s: %s'.format(_('MD5'), res.checksum)) : '',
-@@ -1148,7 +1269,12 @@ function handleInput(ev) {
+@@ -1148,7 +1271,12 @@ function handleInput(ev) {
  
  return view.extend({
  	load() {
 -		return downloadLists();
 +		return Promise.all([
 +			downloadLists(),
-+			L.hasSystemFeature('apk') ? uci.load('luci') : Promise.resolve()
++			L.hasSystemFeature('apk') ? L.resolveDefault(uci.load(untrustedUploadConfig), null) : Promise.resolve()
 +		]).then(function(data) {
 +			return data[0];
 +		});
  	},
  
  	render(listData) {
-@@ -1190,7 +1316,16 @@ return view.extend({
+@@ -1190,7 +1318,16 @@ return view.extend({
  				]),
  
  				E('div', {}, [
@@ -223,8 +247,16 @@ index 48476dbe167f8ce4bc8a552728f132810ae7084c..3a202b0942ba61a907da8ceccd01c883
  					E('span', { 'class': 'control-group' }, [
  						E('button', { 'class': 'btn cbi-button-positive', 'data-command': 'update', 'click': handlePkg, 'disabled': isReadonlyView }, [ _('Update lists…') ]), ' ',
  						E('button', { 'class': 'btn cbi-button-action', 'click': handleUpload, 'disabled': isReadonlyView }, [ _('Upload Package…') ]), ' ',
+diff --git a/applications/luci-app-package-manager/root/etc/config/luci-package-manager b/applications/luci-app-package-manager/root/etc/config/luci-package-manager
+new file mode 100644
+index 0000000000..623fe041f8
+--- /dev/null
++++ b/applications/luci-app-package-manager/root/etc/config/luci-package-manager
+@@ -0,0 +1,2 @@
++config package_manager 'main'
++	option allow_untrusted_uploads '0'
 diff --git a/applications/luci-app-package-manager/root/usr/libexec/package-manager-call b/applications/luci-app-package-manager/root/usr/libexec/package-manager-call
-index 3a4175783a0ba5389902885f5b370d161661c40b..d83457911d555f0b542a79062868ef02c7c743fe 100755
+index 3a4175783a..a4ad581e98 100755
 --- a/applications/luci-app-package-manager/root/usr/libexec/package-manager-call
 +++ b/applications/luci-app-package-manager/root/usr/libexec/package-manager-call
 @@ -30,6 +30,7 @@ case "$action" in
@@ -243,8 +275,8 @@ index 3a4175783a0ba5389902885f5b370d161661c40b..d83457911d555f0b542a79062868ef02
 +			   [ "$requested_action" = "install" ] &&
 +			   [ "$#" -eq 1 ] &&
 +			   [ "$1" = "/tmp/upload.apk" ] &&
-+			   [ "$(uci -q get luci.package_manager.allow_untrusted_uploads)" = "1" ]; then
-+				cmd="$cmd --allow-untrusted --force-non-repository"
++			   [ "$(uci -q get luci-package-manager.main.allow_untrusted_uploads)" = "1" ]; then
++				cmd="$cmd --allow-untrusted"
 +			fi
 +
 +			# Prevent package names and paths from being parsed as apk options.
@@ -256,7 +288,7 @@ index 3a4175783a0ba5389902885f5b370d161661c40b..d83457911d555f0b542a79062868ef02
  				pkmcmd="$cmd $action $@"
  				$cmd $action "$@" </dev/null >/tmp/ipkg.out 2>/tmp/ipkg.err
 diff --git a/applications/luci-app-package-manager/root/usr/share/rpcd/acl.d/luci-app-package-manager.json b/applications/luci-app-package-manager/root/usr/share/rpcd/acl.d/luci-app-package-manager.json
-index 8d551860e892f11656110178cbb35db10c40676c..ade01edbdeb73708aa85206824fbda163b654830 100644
+index 8d551860e8..2a7151a7d6 100644
 --- a/applications/luci-app-package-manager/root/usr/share/rpcd/acl.d/luci-app-package-manager.json
 +++ b/applications/luci-app-package-manager/root/usr/share/rpcd/acl.d/luci-app-package-manager.json
 @@ -14,7 +14,8 @@
@@ -265,17 +297,20 @@ index 8d551860e892f11656110178cbb35db10c40676c..ade01edbdeb73708aa85206824fbda16
  				"luci": [ "getMountPoints" ]
 -			}
 +			},
-+			"uci": [ "luci" ]
++			"uci": [ "luci-package-manager" ]
  		},
  		"write": {
  			"file": {
-@@ -31,7 +32,8 @@
+@@ -31,7 +32,11 @@
  				"/etc/apk/repositories.d/customfeeds.list": [ "write" ],
  				"/tmp/upload.ipk": [ "write" ],
  				"/tmp/upload.apk": [ "write" ]
 -			}
 +			},
-+			"uci": [ "luci" ]
++			"ubus": {
++				"uci": [ "commit", "revert" ]
++			},
++			"uci": [ "luci-package-manager" ]
  		}
  	}
  }

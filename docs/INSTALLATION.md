@@ -22,9 +22,9 @@ baseline results.
 ## Download and verify
 
 Download these assets from
-[`openwrt-25.12-067535e-r2`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/tag/openwrt-25.12-067535e-r2):
+[`openwrt-25.12-067535e-r3`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/tag/openwrt-25.12-067535e-r3):
 
-- `luci-app-package-manager-openwrt-25.12-067535e-r2.apk`
+- `luci-app-package-manager-openwrt-25.12-067535e-r3.apk`
 - `luci-app-package-manager-untrusted-upload-067535e.patch`
 - `SHA256SUMS`
 
@@ -38,7 +38,7 @@ Both listed files must report `OK`. Do not continue if a checksum fails or the
 files came from different release tags.
 
 The published APK uses a GitHub-safe, tag-based filename. Its internal package
-version remains `26.278.01645~e1fb46d`.
+version remains `26.280.00238~1d3542d`.
 
 ## Install
 
@@ -46,14 +46,20 @@ The first installation must be performed in a terminal because the stock LuCI
 package manager cannot yet install this untrusted local APK:
 
 ```sh
-apk add \
-    --allow-untrusted \
-    --force-non-repository \
-    ./luci-app-package-manager-openwrt-25.12-067535e-r2.apk
+apk --simulate --allow-untrusted add -- \
+    ./luci-app-package-manager-openwrt-25.12-067535e-r3.apk
+
+# After reviewing the simulated transaction:
+apk --allow-untrusted add -- \
+    ./luci-app-package-manager-openwrt-25.12-067535e-r3.apk
 ```
 
 The APK replaces the stock `luci-app-package-manager`; it does not install a
-second LuCI application alongside it.
+second LuCI application alongside it. Review the simulation before installation;
+it should replace only this package.
+
+Log out of LuCI, log back in to obtain the new session ACLs, and fully refresh
+the Software page (`Ctrl+F5`) before using the new controls.
 
 ## Enable local untrusted uploads
 
@@ -63,7 +69,8 @@ second LuCI application alongside it.
 4. Press **Save**.
 
 The setting remains disabled by default and is stored as
-`luci.package_manager.allow_untrusted_uploads` in UCI. Enabling it does not
+`luci-package-manager.main.allow_untrusted_uploads` in
+`/etc/config/luci-package-manager`. Enabling it does not
 silently install anything: every uploaded APK still requires a separate
 confirmation.
 
@@ -76,7 +83,27 @@ After explicit opt-in, the page must show **Allowed** with a warning badge. An
 uploaded local APK must still display the per-upload confirmation before the
 backend starts installation.
 
-See [Security model](SECURITY.md) for the exact backend scope.
+Check the persisted value through SSH:
+
+```sh
+uci -q get luci-package-manager.main.allow_untrusted_uploads
+```
+
+Expected values are `0` for Blocked and `1` for Allowed. A save error should
+restore the saved value and display an error notification. The default and
+save boundaries are described in [Security model](SECURITY.md).
+
+## Upgrade behavior
+
+On the first upgrade from r1 or r2, the old shared
+`luci.package_manager.allow_untrusted_uploads` setting is ignored. The new
+configuration defaults to **Blocked**; enable it explicitly if required. The
+shared `/etc/config/luci` file does not need modification.
+
+If `/etc/config/luci-package-manager` already exists, APK preserves the active
+configuration during later upgrades. It may place the new shipped default in
+`/etc/config/luci-package-manager.apk-new`. Review that file before replacing
+any active configuration. The selected setting also persists across reboot.
 
 ## Return to the repository package
 
@@ -96,6 +123,7 @@ REPO_VERSION="$(
     head -n 1
 )"
 
+test -n "$REPO_VERSION" || { echo 'No repository version found' >&2; exit 1; }
 printf 'Repository version: %s\n' "$REPO_VERSION"
 ```
 
@@ -135,10 +163,12 @@ system upgrades or replacements.
 
 ## Remove the optional setting
 
-After returning to the repository package, the now-unused UCI setting may be
-removed:
+After returning to the repository package, the unused dedicated configuration
+can be removed if you no longer need its saved value:
 
 ```sh
-uci -q delete luci.package_manager.allow_untrusted_uploads
-uci commit luci
+rm -f /etc/config/luci-package-manager /etc/config/luci-package-manager.apk-new
 ```
+
+Log out, log back in, and fully refresh LuCI after restoring the repository
+package. No changes to the shared `/etc/config/luci` are needed.

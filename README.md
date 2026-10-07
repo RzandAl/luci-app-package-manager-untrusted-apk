@@ -10,35 +10,41 @@ package maintainer script. The released APK is a rebuilt
 
 > **Target platform:** OpenWrt 25.12 with the APK package manager.
 
+Release **r3** uses a dedicated UCI configuration and passes only
+`--allow-untrusted` for explicitly enabled local uploads.
+
 ## Release scope
 
 | Item | Value |
 | --- | --- |
 | OpenWrt release line | 25.12 |
 | Upstream base | [`067535eaf51a59582b775a8b588a9b05810f8030`](https://github.com/openwrt/luci/commit/067535eaf51a59582b775a8b588a9b05810f8030) |
-| Patched source | [`e1fb46d3ecae5ede2eabcfe1792697ac734bb07a`](https://github.com/RzandAl/luci/commit/e1fb46d3ecae5ede2eabcfe1792697ac734bb07a) |
-| Release tag | `openwrt-25.12-067535e-r2` |
-| APK package version | `26.278.01645~e1fb46d` |
-| Release APK asset | `luci-app-package-manager-openwrt-25.12-067535e-r2.apk` |
+| Patched source | [`1d3542d3a5348c96edbc3e155c49a293b1272f3f`](https://github.com/RzandAl/luci/commit/1d3542d3a5348c96edbc3e155c49a293b1272f3f) |
+| Release tag | `openwrt-25.12-067535e-r3` |
+| APK package version | `26.280.00238~1d3542d` |
+| Release APK asset | `luci-app-package-manager-openwrt-25.12-067535e-r3.apk` |
 | Package architecture | `noarch` |
 
 ## What the patch changes
 
 - Adds **Allow untrusted local packages** to **Configure APK**.
 - Stores the setting as
-  `luci.package_manager.allow_untrusted_uploads` in UCI.
+  `luci-package-manager.main.allow_untrusted_uploads` in
+  `/etc/config/luci-package-manager`.
 - Keeps the setting disabled by default.
 - Shows the current **Blocked** or **Allowed** state on the Software page.
 - Keeps the existing confirmation dialog for every uploaded package.
-- Reloads the persisted UCI value if saving the setting fails, so the displayed
-  state cannot remain out of sync with the backend.
-- Adds `--allow-untrusted` and `--force-non-repository` in the backend only
+- Commits and reverts only the dedicated configuration, preserving unrelated
+  shared LuCI values and pending changes.
+- Reverts pending dedicated changes and reloads the saved value after a failed
+  save, restoring the page status.
+- Adds only `--allow-untrusted` in the backend
   when all of the following are true:
   - the package manager is `apk`;
   - the requested action is `install`;
   - exactly one package argument was supplied;
   - that argument is exactly `/tmp/upload.apk`;
-  - the UCI setting is enabled.
+  - the dedicated UCI setting is exactly `1`.
 - Prevents package names and paths from being interpreted as `apk` options by
   inserting the `--` option delimiter.
 - Does not allow the frontend to supply arbitrary trust flags.
@@ -49,15 +55,24 @@ package maintainer script. The released APK is a rebuilt
 | --- | --- |
 | Target | OpenWrt 25.12 with APK |
 | Build | Official OpenWrt 25.12.5 SDK for `ramips/mt7621` |
-| Runtime — Xiaomi Mi Router 3G | r2 on OpenWrt 25.12.2 and 25.12.5 (`ramips/mt7621`) |
-| Runtime — Cudy WR3000S v1 | r2 on OpenWrt 25.12.5 (`mediatek/filogic`) |
-| Browser UI | Firefox, Chrome, and Microsoft Edge |
-| Validation | Blocked by default; explicit opt-in and per-upload confirmation required |
+| r3 runtime | Xiaomi Mi Router 3G, OpenWrt 25.12.5 (`ramips/mt7621`) |
+| r3 browser UI | Firefox |
+| Earlier r2 coverage | Xiaomi on 25.12.2/25.12.5, Cudy WR3000S v1 on 25.12.5; Firefox, Chrome, and Edge |
+| Validation | Dedicated save isolation, failed-save recovery, reboot persistence, uploads, and repository-install simulation |
 
-The released APK is architecture-independent (`noarch`). Compatibility outside
-the OpenWrt 25.12 release line is not claimed.
+The released APK is architecture-independent (`noarch`). This metadata does not
+establish runtime compatibility on untested devices. The r3 scope is recorded in
+[Release validation](docs/VALIDATION.md); earlier results remain in the
+[r2 validation archive](docs/VALIDATION-R2.md).
+
+On the first upgrade from r1 or r2, the old shared `luci` option is ignored and
+the new setting defaults to **Blocked**. An existing dedicated configuration is
+preserved on subsequent upgrades. See [Installation](docs/INSTALLATION.md).
 
 ## Screenshots
+
+These images were captured from the r2 interface on OpenWrt 25.12.5. They
+illustrate the controls and confirmation flow retained in r3.
 
 ### Blocked by default
 
@@ -100,11 +115,11 @@ The backend scope and operations that remain unaffected are documented in
 ## Release packages
 
 Assets for
-[`openwrt-25.12-067535e-r2`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/tag/openwrt-25.12-067535e-r2):
+[`openwrt-25.12-067535e-r3`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/tag/openwrt-25.12-067535e-r3):
 
-- [`luci-app-package-manager-openwrt-25.12-067535e-r2.apk`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r2/luci-app-package-manager-openwrt-25.12-067535e-r2.apk)
-- [`luci-app-package-manager-untrusted-upload-067535e.patch`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r2/luci-app-package-manager-untrusted-upload-067535e.patch)
-- [`SHA256SUMS`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r2/SHA256SUMS)
+- [`luci-app-package-manager-openwrt-25.12-067535e-r3.apk`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r3/luci-app-package-manager-openwrt-25.12-067535e-r3.apk)
+- [`luci-app-package-manager-untrusted-upload-067535e.patch`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r3/luci-app-package-manager-untrusted-upload-067535e.patch)
+- [`SHA256SUMS`](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/releases/download/openwrt-25.12-067535e-r3/SHA256SUMS)
 
 The APK is intentionally untrusted. Verify `SHA256SUMS` and perform the first
 installation from a terminal; see [Installation and rollback](docs/INSTALLATION.md)
@@ -120,22 +135,23 @@ for the complete procedure.
 
 ## Tests and validation
 
-The `r2` release validation covered exact source and patch provenance, clean
-standalone patch application, APK metadata and payload inspection, release
-checksums, and the complete blocked and allowed runtime paths on OpenWrt 25.12.5.
-The r2 package was also checked on OpenWrt 25.12.2 and on both devices listed in
-[Compatibility](#compatibility).
+The r3 APK was built and inspected from the exact signed source commit, then
+checked on Xiaomi Mi Router 3G with OpenWrt 25.12.5. Tests covered isolated
+saving, real dedicated rollback after an injected commit failure, reboot
+persistence, successful opt-in uploads, blocked uploads with APK exit code 99,
+and upload cleanup. A repository-install simulation preserved both configuration
+files and `/etc/apk/world`.
 
-The complete recorded scope is in [Release validation](docs/VALIDATION.md),
-with reproduction commands in [BUILDING.md](docs/BUILDING.md). The repository CI
-also repeats clean patch application and syntax validation on every change.
+The complete scope is in [Release validation](docs/VALIDATION.md), with
+reproduction commands and hashes in [BUILDING.md](docs/BUILDING.md). CI verifies
+the complete patched source tree, syntax, configuration registration, and ACLs.
 
 ## Source provenance
 
 - Development branch:
   [`fix/package-manager-untrusted-upload-067535e`](https://github.com/RzandAl/luci/tree/fix/package-manager-untrusted-upload-067535e)
 - Exact signed commit:
-  [`e1fb46d3ecae5ede2eabcfe1792697ac734bb07a`](https://github.com/RzandAl/luci/commit/e1fb46d3ecae5ede2eabcfe1792697ac734bb07a)
+  [`1d3542d3a5348c96edbc3e155c49a293b1272f3f`](https://github.com/RzandAl/luci/commit/1d3542d3a5348c96edbc3e155c49a293b1272f3f)
 - Standalone source patch:
   [`patches/luci-app-package-manager-untrusted-upload-067535e.patch`](patches/luci-app-package-manager-untrusted-upload-067535e.patch)
 - Related upstream report:
@@ -143,9 +159,12 @@ also repeats clean patch application and syntax validation on every change.
 
 ## Upstream status
 
-The long-term goal is to submit the change to OpenWrt LuCI. Once equivalent
-support is available in the official OpenWrt package, this unofficial build
-will be marked obsolete and users should return to the repository package.
+The change is proposed in [openwrt/luci#9110](https://github.com/openwrt/luci/pull/9110)
+and is awaiting review. It has not been merged into official LuCI.
+
+Once equivalent support is available in the official OpenWrt package, this
+unofficial build will be marked obsolete and users should return to the
+repository package.
 
 ## Maintainers
 

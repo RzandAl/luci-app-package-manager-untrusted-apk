@@ -1,83 +1,85 @@
-# Release validation
+# r3 release validation
 
-This document records the validation scope for release
-`openwrt-25.12-067535e-r2`. It is a release record, not a compatibility claim
-for later OpenWrt or LuCI revisions.
+Validation for `openwrt-25.12-067535e-r3` completed on 7 October 2026. This
+record describes the final APK from signed source commit
+`1d3542d3a5348c96edbc3e155c49a293b1272f3f`. Earlier r2 results remain in the
+[r2 validation archive](VALIDATION-R2.md).
 
-## Environment matrix
+## Environment
 
-| Area | Environment |
+| Area | Verified environment |
 | --- | --- |
-| Build | Official OpenWrt 25.12.5 SDK for `ramips/mt7621` |
-| r2 runtime — Xiaomi Mi Router 3G | OpenWrt 25.12.2 and 25.12.5 (`ramips/mt7621`) |
-| r2 runtime — Cudy WR3000S v1 | OpenWrt 25.12.5 (`mediatek/filogic`) |
-| Browser UI | Firefox, Chrome, and Microsoft Edge |
+| Build | Official OpenWrt 25.12.5 SDK, `ramips/mt7621`, GCC 14.3.0, musl, Linux x86_64 |
+| Router | Xiaomi Mi Router 3G (`xiaomi,mi-router-3g`), `ramips/mt7621` |
+| Firmware | OpenWrt 25.12.5, `r33051-f5dae5ece4`, kernel `6.12.94`, squashfs |
+| Browser | Firefox |
+| Installed package | `luci-app-package-manager`, `26.280.00238~1d3542d`, `noarch` |
 
-The resulting package reports `arch: noarch`; the target SDK was still used to
-resolve and validate the OpenWrt package environment.
+r3 was not separately validated on the Cudy device or on OpenWrt 25.12.2.
+The earlier r2 checks on those environments do not establish r3 coverage.
 
-## Source and patch validation
+## Source and artifact
 
-The release was checked against:
+The final full patch applies cleanly to upstream base
+`067535eaf51a59582b775a8b588a9b05810f8030` and produces Git tree
+`4840108cc406996d631b8c3fc8be42a0e15cf14b`, matching the signed source.
+Checks covered whitespace, shell and JavaScript syntax, JSON validity, dedicated
+configuration registration, scoped UCI access, and the commit/revert ACL methods.
 
-- upstream LuCI base commit
-  `067535eaf51a59582b775a8b588a9b05810f8030`;
-- exact patched LuCI commit
-  `e1fb46d3ecae5ede2eabcfe1792697ac734bb07a`;
-- the standalone patch in
-  `patches/luci-app-package-manager-untrusted-upload-067535e.patch`;
-- clean standalone patch application to the upstream base;
-- `git diff --check` after patch application.
+The APK build and payload inspection passed. Its SHA-256 is
+`d7464472e3ecb487ccda350985f5b31ed2075e3cd52b452467e201182bd6ecc2`.
+Config, backend, and ACL matched the signed source. The frontend matched the
+SDK staging copy. Metadata confirmed the version, architecture, and registered
+configuration file with the disabled default. Exact hashes and reproduction
+commands are in [Building](BUILDING.md).
 
-Reproduction commands are documented in [BUILDING.md](BUILDING.md).
+## Device results
 
-## Artifact validation
+| Check | Result |
+| --- | --- |
+| Package update | Simulation and installation changed only `luci-app-package-manager`; final version confirmed |
+| Existing configuration | Dedicated opt-in `1` retained; shared file and pending CLI changes preserved; shipped default placed in `.apk-new` |
+| Successful browser save | Changing `1` to `0` committed only the dedicated configuration; shared values and unrelated browser-session queue retained |
+| Failed browser save | Injected commit failure followed by one real dedicated revert; queue emptied, cache and Blocked status restored |
+| Error notification | Expected `R3_EXPECTED_COMMIT_FAILURE` notification appeared on Save; test hooks then removed |
+| Reboot | Both configuration checksums unchanged; opt-in `1` and final installed version retained |
+| Allowed upload | Final APK installed successfully after confirmation; dedicated value remained `1` |
+| Blocked upload | APK returned expected exit code `99`; dedicated value remained `0` |
+| Upload cleanup | `/tmp/upload.apk` absent after Dismiss for both outcomes |
+| Repository-install simulation | Real installed backend invoked APK simulation for `jsonfilter`; both configurations and `/etc/apk/world` unchanged |
+| Final state | `allow_untrusted_uploads=0` |
 
-The published bundle was checked for:
+The isolation helper staged an unrelated shared `luci` change in the browser
+session. Ordinary Configure APK Save preserved it. The helper then removed its
+test change using a successful real shared revert; the shared file checksum
+remained unchanged.
 
-- matching release checksums;
-- APK SHA-256
-  `eca926ba1a94611df054de07da466937532b96e9f7f5296d6d75a9b929e9bad8`;
-- package version `26.278.01645~e1fb46d` and `noarch` metadata;
-- expected payload paths;
-- valid shell syntax for `package-manager-call`;
-- valid JSON for the RPC ACL;
-- unchanged APK contents after renaming the SDK output to the release filename.
+The failure helper observed the real dedicated pending change from `0` to `1`,
+then rejected its commit before forwarding the request to the router. The
+frontend itself performed the real dedicated revert. This verifies recovery
+from a failed commit without deliberately failing a disk write. Both
+configuration file checksums and all shared values remained unchanged.
 
-The exact expected hashes and APK inspection commands are in
-[BUILDING.md](BUILDING.md#inspect-the-apk).
+The repository test called `/usr/libexec/package-manager-call install jsonfilter`
+through a temporary PATH wrapper. The wrapper required exactly `add -- jsonfilter`
+and forwarded those arguments to `/usr/bin/apk --simulate`. The backend returned
+code `0` and `apk add -- jsonfilter`. This was a simulation, not an actual
+repository package installation. The wrapper and persistent reboot checksum
+file were removed after verification.
 
-## Runtime validation
+The final upload outcomes and cleanup were reported through LuCI and SSH.
+Expected uploaded-file commands are established by payload inspection and local
+backend tests; the final device report did not quote those command strings.
+The screenshots in this repository are r2 captures.
 
-Runtime validation covered:
+## Local checks and CI
 
-- first installation from a terminal with the required trust flags;
-- the default **Blocked** state;
-- a blocked upload invoking `apk add -- /tmp/upload.apk`, rejected by APK with
-  `UNTRUSTED signature` and exit code 99;
-- explicit opt-in through **Configure APK**;
-- the **Allowed** warning state after opt-in;
-- a separate confirmation for each uploaded APK;
-- successful installation after confirmation with exactly
-  `apk --allow-untrusted --force-non-repository add -- /tmp/upload.apk`;
-- restoring `luci.package_manager.allow_untrusted_uploads=0` after the test;
-- removal of `/tmp/upload.apk` after package-manager completion.
+Separate local mock checks passed 21 backend cases and five frontend save/error
+cases. They exercised exact upload scope, disabled and enabled states, APK
+option delimiters, other actions and package managers, and save recovery.
+These checks support the source review and are distinct from device evidence.
 
-The exact command, result, UCI-state, and upload-cleanup sequence above was
-recorded on the Xiaomi device running OpenWrt 25.12.5. The r2 package and its
-user-visible flow were also checked on the Xiaomi device running OpenWrt 25.12.2
-and on the Cudy device running OpenWrt 25.12.5.
-
-The screenshots in this repository were captured from the r2 interface on
-OpenWrt 25.12.5.
-
-## Continuous validation
-
-The repository [validation workflow](../.github/workflows/validate.yml) repeats
-the following checks on every push and pull request:
-
-- fetch the exact upstream base commit;
-- verify and apply the standalone patch;
-- run `git diff --check`;
-- verify the published patch checksum;
-- check backend shell syntax, RPC ACL JSON, and frontend JavaScript syntax.
+The [validation workflow](../.github/workflows/validate.yml) checks the patch
+checksum, applies it to the exact upstream base, compares the complete source
+Git tree, and verifies syntax, configuration registration, the disabled default,
+and UCI/RPC ACL scope. CI does not replace the device checks above.

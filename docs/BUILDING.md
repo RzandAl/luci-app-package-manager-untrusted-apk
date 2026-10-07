@@ -44,10 +44,10 @@ git -C feeds/luci fetch fork \
     '+refs/heads/fix/package-manager-untrusted-upload-067535e:refs/remotes/fork/fix/package-manager-untrusted-upload-067535e'
 
 git -C feeds/luci switch --detach \
-    e1fb46d3ecae5ede2eabcfe1792697ac734bb07a
+    1d3542d3a5348c96edbc3e155c49a293b1272f3f
 
 test "$(git -C feeds/luci rev-parse HEAD)" = \
-    'e1fb46d3ecae5ede2eabcfe1792697ac734bb07a'
+    '1d3542d3a5348c96edbc3e155c49a293b1272f3f'
 ```
 
 Refresh the package link from the checked-out LuCI feed:
@@ -79,7 +79,7 @@ Locate the result:
 ```sh
 find bin/packages \
     -type f \
-    -name 'luci-app-package-manager-*~e1fb46d.apk' \
+    -name 'luci-app-package-manager-*~1d3542d.apk' \
     -print
 ```
 
@@ -88,7 +88,7 @@ find bin/packages \
 Set `PACKAGE_APK` to the path printed above:
 
 ```sh
-PACKAGE_APK='bin/packages/ARCH/luci/luci-app-package-manager-26.278.01645~e1fb46d.apk'
+PACKAGE_APK='bin/packages/ARCH/luci/luci-app-package-manager-26.280.00238~1d3542d.apk'
 APK_CHECK_DIR="$(mktemp -d)"
 
 sha256sum "$PACKAGE_APK"
@@ -113,10 +113,19 @@ Inspect the package metadata:
 ./staging_dir/host/bin/apk adbdump "$PACKAGE_APK"
 ```
 
-For the published `r2` artifact, the expected APK SHA-256 is:
+Confirm that the payload contains the dedicated default configuration and that
+metadata registers `/etc/config/luci-package-manager` as a configuration file.
+The default is `allow_untrusted_uploads '0'`. The ACL must grant UCI read/write
+access only to `luci-package-manager` and write RPC access to `uci.commit` and
+`uci.revert`. The backend must contain only `--allow-untrusted` as its trust
+bypass flag. Compare config, backend, and ACL with the exact source commit;
+compare the frontend with the SDK's staged copy, which may be transformed by
+the build.
+
+For the validated r3 artifact, the expected APK SHA-256 is:
 
 ```text
-eca926ba1a94611df054de07da466937532b96e9f7f5296d6d75a9b929e9bad8
+d7464472e3ecb487ccda350985f5b31ed2075e3cd52b452467e201182bd6ecc2
 ```
 
 ## Validate the standalone patch
@@ -137,10 +146,12 @@ git -C feeds/luci switch --detach \
 git -C feeds/luci apply --check \
     /path/to/luci-app-package-manager-untrusted-upload-067535e.patch
 
-git -C feeds/luci apply \
+git -C feeds/luci apply --index \
     /path/to/luci-app-package-manager-untrusted-upload-067535e.patch
 
-git -C feeds/luci diff --check
+git -C feeds/luci diff --cached --check
+test "$(git -C feeds/luci write-tree)" = \
+    '4840108cc406996d631b8c3fc8be42a0e15cf14b'
 ```
 
 Building an uncommitted patch on top of the base commit does not reproduce the
@@ -149,14 +160,18 @@ metadata. Check out the exact patched commit when reproducing the released APK.
 
 ## Release checksums
 
-The SDK emits `luci-app-package-manager-26.278.01645~e1fb46d.apk`. The
+Build instructions identify the exact source and toolchain. A new build may
+produce different APK bytes; compare its payload and metadata rather than
+assuming byte-for-byte reproduction of the validated artifact.
+
+The SDK emits `luci-app-package-manager-26.280.00238~1d3542d.apk`. The
 published copy has the GitHub-safe, tag-based filename shown below; its content
 and internal package version are unchanged.
 
-The `r2` release bundle contains:
+The `r3` release bundle contains:
 
 ```text
-luci-app-package-manager-openwrt-25.12-067535e-r2.apk
+luci-app-package-manager-openwrt-25.12-067535e-r3.apk
 luci-app-package-manager-untrusted-upload-067535e.patch
 SHA256SUMS
 ```
@@ -164,12 +179,21 @@ SHA256SUMS
 Expected hashes:
 
 ```text
-eca926ba1a94611df054de07da466937532b96e9f7f5296d6d75a9b929e9bad8  luci-app-package-manager-openwrt-25.12-067535e-r2.apk
-921cb36984cc9b7374e7554fccf59a42d491aef4b657b6da06aa1830f835d670  luci-app-package-manager-untrusted-upload-067535e.patch
+d7464472e3ecb487ccda350985f5b31ed2075e3cd52b452467e201182bd6ecc2  luci-app-package-manager-openwrt-25.12-067535e-r3.apk
+8cfbe3d45b11ea4688cbedb0af609584ce531180b61cc613f9400d8a8dbd9412  luci-app-package-manager-untrusted-upload-067535e.patch
 ```
 
 The expected SHA-256 of `SHA256SUMS` itself is:
 
 ```text
-3aafbc6b5b25fac1aeebc482741af4e17059b6ee4453b450773a2a14fa562390
+bf2f0ee8e3b04c8e44bfe49b5ebbfa43fb660c7815c9cd4de2a0b4f13307d596
+```
+
+Generate `SHA256SUMS` from the renamed APK and matching patch in that order:
+
+```sh
+sha256sum \
+    luci-app-package-manager-openwrt-25.12-067535e-r3.apk \
+    luci-app-package-manager-untrusted-upload-067535e.patch > SHA256SUMS
+sha256sum -c SHA256SUMS
 ```
