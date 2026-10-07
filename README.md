@@ -55,8 +55,9 @@ Release **r3** uses a dedicated UCI configuration and passes only
 | --- | --- |
 | Target | OpenWrt 25.12 with APK |
 | Build | Official OpenWrt 25.12.5 SDK for `ramips/mt7621` |
-| r3 runtime | Xiaomi Mi Router 3G, OpenWrt 25.12.5 (`ramips/mt7621`) |
-| r3 browser UI | Firefox |
+| r3 runtime — Xiaomi | Xiaomi Mi Router 3G, OpenWrt 25.12.5 (`ramips/mt7621`) |
+| r3 runtime — Cudy | Cudy WR3000S v1 (`mediatek/filogic`); repeated checks confirmed by the operator |
+| r3 browser UI | Firefox, Chrome, and Microsoft Edge |
 | Earlier r2 coverage | Xiaomi on 25.12.2/25.12.5, Cudy WR3000S v1 on 25.12.5; Firefox, Chrome, and Edge |
 | Validation | Dedicated save isolation, failed-save recovery, reboot persistence, uploads, and repository-install simulation |
 
@@ -141,6 +142,11 @@ saving, real dedicated rollback after an injected commit failure, reboot
 persistence, successful opt-in uploads, blocked uploads with APK exit code 99,
 and upload cleanup. A repository-install simulation preserved both configuration
 files and `/etc/apk/world`.
+
+The same checks were repeated on Cudy WR3000S v1 and in Chrome and Microsoft
+Edge. The operator confirmed that all additional checks passed on 7 October
+2026. The validation record distinguishes these reported repetitions from the
+detailed Xiaomi/Firefox logs.
 
 The complete scope is in [Release validation](docs/VALIDATION.md), with
 reproduction commands and hashes in [BUILDING.md](docs/BUILDING.md). CI verifies

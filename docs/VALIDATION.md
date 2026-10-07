@@ -1,7 +1,9 @@
 # r3 release validation
 
-Validation for `openwrt-25.12-067535e-r3` completed on 7 October 2026. This
-record describes the final APK from signed source commit
+Validation for `openwrt-25.12-067535e-r3` completed on 7 October 2026. The
+operator also confirmed successful repeat checks on Cudy WR3000S v1 and in
+Chrome and Microsoft Edge. This record describes the final APK from signed
+source commit
 `1d3542d3a5348c96edbc3e155c49a293b1272f3f`. Earlier r2 results remain in the
 [r2 validation archive](VALIDATION-R2.md).
 
@@ -10,13 +12,30 @@ record describes the final APK from signed source commit
 | Area | Verified environment |
 | --- | --- |
 | Build | Official OpenWrt 25.12.5 SDK, `ramips/mt7621`, GCC 14.3.0, musl, Linux x86_64 |
-| Router | Xiaomi Mi Router 3G (`xiaomi,mi-router-3g`), `ramips/mt7621` |
-| Firmware | OpenWrt 25.12.5, `r33051-f5dae5ece4`, kernel `6.12.94`, squashfs |
-| Browser | Firefox |
+| Xiaomi device | Mi Router 3G (`xiaomi,mi-router-3g`), `ramips/mt7621` |
+| Xiaomi firmware | OpenWrt 25.12.5, `r33051-f5dae5ece4`, kernel `6.12.94`, squashfs |
+| Additional device | Cudy WR3000S v1, `mediatek/filogic`; repeat checks confirmed by the operator |
+| Browser UI | Firefox, Chrome, and Microsoft Edge |
 | Installed package | `luci-app-package-manager`, `26.280.00238~1d3542d`, `noarch` |
 
-r3 was not separately validated on the Cudy device or on OpenWrt 25.12.2.
-The earlier r2 checks on those environments do not establish r3 coverage.
+OpenWrt 25.12.2 remains part of the historical r2 record.
+
+## Additional r3 validation
+
+| Repeated coverage | Result |
+| --- | --- |
+| Cudy WR3000S v1 | All repeated checks passed, as confirmed by the operator |
+| Chrome | Repeated browser checks passed, as confirmed by the operator |
+| Microsoft Edge | Repeated browser checks passed, as confirmed by the operator |
+
+After the detailed Xiaomi/Firefox run, the operator repeated the same final-APK
+checks on Cudy and in Chrome/Edge and reported that everything passed on
+7 October 2026. This confirmation covers the repeated save isolation, failed-save
+recovery, reboot persistence, Allowed/Blocked behavior, upload cleanup, and
+repository-install simulation. Separate raw logs and a Cudy firmware dump were
+not included with that confirmation. The detailed build/kernel information
+above belongs to the Xiaomi run; this record does not claim every possible
+device/browser combination was tested.
 
 ## Source and artifact
 
@@ -33,7 +52,7 @@ SDK staging copy. Metadata confirmed the version, architecture, and registered
 configuration file with the disabled default. Exact hashes and reproduction
 commands are in [Building](BUILDING.md).
 
-## Device results
+## Completed Xiaomi/Firefox device results
 
 | Check | Result |
 | --- | --- |

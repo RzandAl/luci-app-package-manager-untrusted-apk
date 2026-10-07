@@ -16,7 +16,10 @@ Validated on Xiaomi Mi Router 3G with OpenWrt 25.12.5 and Firefox: isolated
 saving, real revert after an injected commit failure, reboot persistence,
 Allowed success, Blocked exit code 99, and upload cleanup. A repository-install
 simulation left both configurations and `/etc/apk/world` unchanged. Final test
-state was `0`. r2's wider device/browser coverage remains archived separately.
+state was `0`. The operator also repeated the checks on Cudy WR3000S v1 and
+in Chrome and Microsoft Edge, confirming that all passed on 7 October 2026.
+The detailed Xiaomi logs and the confirmed repeat runs are recorded separately.
+Earlier r2 coverage remains archived separately.
 
 Source: [`1d3542d3a5348c96edbc3e155c49a293b1272f3f`](https://github.com/RzandAl/luci/commit/1d3542d3a5348c96edbc3e155c49a293b1272f3f),
 signed and verified; upstream base `067535eaf51a59582b775a8b588a9b05810f8030`.
@@ -26,7 +29,7 @@ The release contains the rebuilt APK, full standalone patch, and `SHA256SUMS`.
 Verify both listed files before installation. The APK is intentionally untrusted;
 first installation requires the terminal procedure in
 [Installation](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/blob/openwrt-25.12-067535e-r3/docs/INSTALLATION.md).
-See [Validation](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/blob/openwrt-25.12-067535e-r3/docs/VALIDATION.md)
+See [Validation](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/blob/main/docs/VALIDATION.md)
 and [Build and hashes](https://github.com/RzandAl/luci-app-package-manager-untrusted-apk/blob/openwrt-25.12-067535e-r3/docs/BUILDING.md).
 
 This remains an unofficial replacement for the stock package. Upstream
