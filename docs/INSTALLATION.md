@@ -95,7 +95,7 @@ save boundaries are described in [Security model](SECURITY.md).
 
 ## Upgrade behavior
 
-On the first upgrade from r1 or r2, the old shared
+When upgrading from a build that used the shared
 `luci.package_manager.allow_untrusted_uploads` setting is ignored. The new
 configuration defaults to **Blocked**; enable it explicitly if required. The
 shared `/etc/config/luci` file does not need modification.

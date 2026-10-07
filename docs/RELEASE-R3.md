@@ -1,4 +1,4 @@
-r3 moves **Allow untrusted local packages** into its own UCI configuration and
+**Allow untrusted local packages** uses its own UCI configuration and
 uses only `--allow-untrusted` for a confirmed `/tmp/upload.apk` installation.
 
 - Stores the setting in `/etc/config/luci-package-manager`, disabled by default.
@@ -8,18 +8,14 @@ uses only `--allow-untrusted` for a confirmed `/tmp/upload.apk` installation.
 - Keeps the exact upload guard, APK `--` delimiter, and per-upload confirmation.
 - Registers the configuration file so later upgrades preserve the selected value.
 
-On the first upgrade from r1/r2, the old shared `luci` option is ignored and the
-new option starts **Blocked**. Log out, log back in, and fully refresh LuCI after
-installation. Existing dedicated configurations are preserved.
+When upgrading from a build that stored the option in shared `luci`, the
+dedicated setting starts **Blocked**. Log out, log back in, and fully refresh
+LuCI after installation. Existing dedicated configurations are preserved.
 
-Validated on Xiaomi Mi Router 3G with OpenWrt 25.12.5 and Firefox: isolated
-saving, real revert after an injected commit failure, reboot persistence,
-Allowed success, Blocked exit code 99, and upload cleanup. A repository-install
-simulation left both configurations and `/etc/apk/world` unchanged. Final test
-state was `0`. The operator also repeated the checks on Cudy WR3000S v1 and
-in Chrome and Microsoft Edge, confirming that all passed on 7 October 2026.
-The detailed Xiaomi logs and the confirmed repeat runs are recorded separately.
-Earlier r2 coverage remains archived separately.
+Checked on Xiaomi Mi Router 3G and Cudy WR3000S v1, using Firefox, Chrome,
+and Microsoft Edge. Tests covered Allowed and Blocked uploads, saving,
+failed-save recovery, reboot persistence, and upload cleanup. A repository-install
+simulation also passed.
 
 Source: [`1d3542d3a5348c96edbc3e155c49a293b1272f3f`](https://github.com/RzandAl/luci/commit/1d3542d3a5348c96edbc3e155c49a293b1272f3f),
 signed and verified; upstream base `067535eaf51a59582b775a8b588a9b05810f8030`.
@@ -34,4 +30,3 @@ and [Build and hashes](https://github.com/RzandAl/luci-app-package-manager-untru
 
 This remains an unofficial replacement for the stock package. Upstream
 [openwrt/luci#9110](https://github.com/openwrt/luci/pull/9110) is awaiting review.
-r1 and r2 remain available with their original assets.

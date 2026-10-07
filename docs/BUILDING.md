@@ -122,7 +122,7 @@ bypass flag. Compare config, backend, and ACL with the exact source commit;
 compare the frontend with the SDK's staged copy, which may be transformed by
 the build.
 
-For the validated r3 artifact, the expected APK SHA-256 is:
+For the published artifact, the expected APK SHA-256 is:
 
 ```text
 d7464472e3ecb487ccda350985f5b31ed2075e3cd52b452467e201182bd6ecc2
@@ -168,7 +168,7 @@ The SDK emits `luci-app-package-manager-26.280.00238~1d3542d.apk`. The
 published copy has the GitHub-safe, tag-based filename shown below; its content
 and internal package version are unchanged.
 
-The `r3` release bundle contains:
+The release bundle contains:
 
 ```text
 luci-app-package-manager-openwrt-25.12-067535e-r3.apk

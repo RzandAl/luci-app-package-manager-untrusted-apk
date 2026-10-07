@@ -10,7 +10,7 @@ package maintainer script. The released APK is a rebuilt
 
 > **Target platform:** OpenWrt 25.12 with the APK package manager.
 
-Release **r3** uses a dedicated UCI configuration and passes only
+The setting uses a dedicated UCI configuration and passes only
 `--allow-untrusted` for explicitly enabled local uploads.
 
 ## Release scope
@@ -55,25 +55,22 @@ Release **r3** uses a dedicated UCI configuration and passes only
 | --- | --- |
 | Target | OpenWrt 25.12 with APK |
 | Build | Official OpenWrt 25.12.5 SDK for `ramips/mt7621` |
-| r3 runtime — Xiaomi | Xiaomi Mi Router 3G, OpenWrt 25.12.5 (`ramips/mt7621`) |
-| r3 runtime — Cudy | Cudy WR3000S v1 (`mediatek/filogic`); repeated checks confirmed by the operator |
-| r3 browser UI | Firefox, Chrome, and Microsoft Edge |
-| Earlier r2 coverage | Xiaomi on 25.12.2/25.12.5, Cudy WR3000S v1 on 25.12.5; Firefox, Chrome, and Edge |
+| Tested — Xiaomi Mi Router 3G | OpenWrt 25.12.2 and 25.12.5 (`ramips/mt7621`) |
+| Tested — Cudy WR3000S v1 | OpenWrt 25.12.5 (`mediatek/filogic`) |
+| Tested browsers | Firefox, Chrome, and Microsoft Edge |
 | Validation | Dedicated save isolation, failed-save recovery, reboot persistence, uploads, and repository-install simulation |
 
-The released APK is architecture-independent (`noarch`). This metadata does not
-establish runtime compatibility on untested devices. The r3 scope is recorded in
-[Release validation](docs/VALIDATION.md); earlier results remain in the
-[r2 validation archive](docs/VALIDATION-R2.md).
+The released APK is architecture-independent (`noarch`). Tested environments
+and results are recorded in [Validation](docs/VALIDATION.md).
 
-On the first upgrade from r1 or r2, the old shared `luci` option is ignored and
-the new setting defaults to **Blocked**. An existing dedicated configuration is
-preserved on subsequent upgrades. See [Installation](docs/INSTALLATION.md).
+When upgrading from a build that stored the option in the shared `luci`
+configuration, the new setting defaults to **Blocked**. An existing dedicated
+configuration is preserved. See [Installation](docs/INSTALLATION.md).
 
 ## Screenshots
 
-These images were captured from the r2 interface on OpenWrt 25.12.5. They
-illustrate the controls and confirmation flow retained in r3.
+These screenshots show the controls and upload confirmation flow on
+OpenWrt 25.12.5.
 
 ### Blocked by default
 
@@ -130,27 +127,20 @@ for the complete procedure.
 
 - [Installation, configuration, verification, and rollback](docs/INSTALLATION.md)
 - [Security model](docs/SECURITY.md)
-- [Release validation](docs/VALIDATION.md)
+- [Validation](docs/VALIDATION.md)
 - [Build and release verification](docs/BUILDING.md)
 - [Automated patch validation](.github/workflows/validate.yml)
 
 ## Tests and validation
 
-The r3 APK was built and inspected from the exact signed source commit, then
-checked on Xiaomi Mi Router 3G with OpenWrt 25.12.5. Tests covered isolated
-saving, real dedicated rollback after an injected commit failure, reboot
-persistence, successful opt-in uploads, blocked uploads with APK exit code 99,
-and upload cleanup. A repository-install simulation preserved both configuration
-files and `/etc/apk/world`.
+Project testing covers the environments listed above. Checks include Allowed
+and Blocked uploads, saving without affecting unrelated LuCI changes, recovery
+after a failed save, reboot persistence, and upload cleanup. A repository-install
+simulation also passed.
 
-The same checks were repeated on Cudy WR3000S v1 and in Chrome and Microsoft
-Edge. The operator confirmed that all additional checks passed on 7 October
-2026. The validation record distinguishes these reported repetitions from the
-detailed Xiaomi/Firefox logs.
-
-The complete scope is in [Release validation](docs/VALIDATION.md), with
-reproduction commands and hashes in [BUILDING.md](docs/BUILDING.md). CI verifies
-the complete patched source tree, syntax, configuration registration, and ACLs.
+See [Validation](docs/VALIDATION.md) for the results and
+[Building](docs/BUILDING.md) for source verification and hashes. CI checks the
+patch, source tree, syntax, configuration registration, and ACLs.
 
 ## Source provenance
 

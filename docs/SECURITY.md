@@ -35,9 +35,9 @@ The frontend commits only the dedicated configuration. If a save fails, it
 reverts that configuration's pending changes, reloads the saved value, restores
 the page status, and displays the error. It does not commit the shared `luci`
 configuration or unrelated pending changes. The real browser-session save and
-failed-save paths were verified as described in [Release validation](VALIDATION.md).
+failed-save paths were verified as described in [Validation](VALIDATION.md).
 
-The r1/r2 setting in the shared `luci` configuration is ignored by r3. It is not
+The old setting in the shared `luci` configuration is ignored. It is not
 migrated or deleted; the first upgrade defaults to disabled unless a dedicated
 configuration already exists. Later upgrades preserve the dedicated configuration.
 
